@@ -17,12 +17,13 @@ Mopidy = __import__('mopidypost').Mopidy
 MediaSkill = __import__('media').MediaSkill
 
 logger = getLogger(abspath(__file__).split('/')[-2])
-__author__ = 'forslund'
+__author__ = 'Enverex'
+## Original skill author: forslund
 
 
-class MopidySkill(MediaSkill):
+class MopidyLocalSkill(MediaSkill):
     def __init__(self):
-        super(MopidySkill, self).__init__('Mopidy Skill')
+        super(MopidyLocalSkill, self).__init__('Mopidy Local Skill')
         self.mopidy = None
         self.volume_is_low = False
         self.connection_attempts = 0
@@ -42,9 +43,8 @@ class MopidySkill(MediaSkill):
             time.sleep(10)
             self.emitter.emit(Message(self.name + '.connect'))
             return
-        logger.info('Connected to mopidy server')
 
-        logger.info('Loading content')
+        logger.info('Connected to Mopidy server. Initialising...')
         self.tracks = {}
         self.albums = {}
         self.artists = {}
@@ -67,15 +67,15 @@ class MopidySkill(MediaSkill):
         self.register_intent(playGenreIntent, self.handle_play_playlist)
 
     def initialize(self):
-        logger.info('Initializing Mopidy skill')
-        super(MopidySkill, self).initialize()
+        logger.info('Mopidy: Initializing skill...')
+        super(MopidyLocalSkill, self).initialize()
         self.load_data_files(dirname(__file__))
 
         self.emitter.on(self.name + '.connect', self._connect)
         self.emitter.emit(Message(self.name + '.connect'))
 
     def play(self, tracks):
-        logger.info("==== ++++ ==== PLAYING TRACKS")
+        logger.info("Mopidy: Trying to play.")
         self.mopidy.clear_list()
         self.mopidy.add_list(tracks)
         self.mopidy.play()
@@ -89,26 +89,26 @@ class MopidySkill(MediaSkill):
 
         ## Play Track by specific artist
         if artist and track:
-            logger.info('==++== PLAY TRACK: ' + artist + ' - ' + track)
+            logger.info('Mopidy: Trying to play track ' + track + ' by ' + artist)
             try:
                 tracks = self.mopidy.find_track(track, artist)
             except:
                 ## Try with known grammar replacements
-                logger.info("==== No matches, trying again")
+                logger.info("Mopidy: No matches, trying again with word variations.")
                 track.replace("we have", "we've")
                 tracks = self.mopidy.find_track(track, artist)
 
         ## Play Album by specific artist
         elif artist and album:
-            logger.info('==++== PLAY ALBUM: ' + artist + ' - ' + album)
+            logger.info('Mopidy: Trying to play album ' + album + ' by ' + artist)
             tracks = self.mopidy.find_artist_album(album, artist)
         ## Play everything by a specific artist
         elif artist:
-            logger.info('==++== PLAY ARTIST: ' + artist)
+            logger.info('Mopidy: Trying to play artist ' + artist)
             tracks = self.mopidy.find_artist(artist)
         ## Play Genre
         elif genre:
-            logger.info('==++== PLAY GENRE: ' + genre)
+            logger.info('Mopidy: Trying to play genre ' + genre)
             tracks = self.mopidy.find_genre(genre)
 
         tracks = list(nested_lookup('uri', tracks))
@@ -153,12 +153,11 @@ class MopidySkill(MediaSkill):
             self.mopidy.lower_volume()
             time.sleep(1)
             if 'album' in current_track:
-                data = {'current_track': current_track['name'],
-                        'artist': current_track['album']['artists'][0]['name']}
+                data = {'current_track': current_track['name'], 'artist': current_track['album']['artists'][0]['name']}
                 self.speak_dialog('currently_playing', data)
             time.sleep(6)
             self.mopidy.restore_volume()
 
 
 def create_skill():
-    return MopidySkill()
+    return MopidyLocalSkill()

@@ -11,9 +11,9 @@ logger = getLogger(__name__)
 __author__ = 'forslund'
 
 
-class MediaSkill(MycroftSkill):
+class MopidyLocalSkill(MycroftSkill):
     """
-        The MediaSkill class is a base class for media skills containing
+        The MopidyLocalSkill class is a base class for media skills containing
         vocabulary and intents for the common functions expected by a media
         skill. In addition event handlers to lower volume when mycroft starts
         to speak and raise it again when (s)he stops.
@@ -23,15 +23,14 @@ class MediaSkill(MycroftSkill):
     """
 
     def __init__(self, name):
-        super(MediaSkill, self).__init__(name)
+        super(MopidyLocalSkill, self).__init__(name)
         self.isPlaying = False
         config = ConfigurationManager.get()
-        self.base_conf = config.get('MediaSkill')
+        self.base_conf = config.get('MopidyLocalSkill')
 
     def initialize(self):
-        logger.info('Initializing MediaSkill commons')
-        logger.info('loading vocab files from ' + join(dirname(__file__),
-                                                       'vocab', self.lang))
+        logger.info('Initializing MopidyLocalSkill commons')
+        logger.info('loading vocab files from ' + join(dirname(__file__), 'vocab', self.lang))
         self.load_vocab_files(join(dirname(__file__), 'vocab', self.lang))
 
         self._register_common_intents()
@@ -51,12 +50,10 @@ class MediaSkill(MycroftSkill):
         intent = IntentBuilder('PauseIntent').require('PauseKeyword')
         self.register_intent(intent, self.handle_pause)
 
-        intent = IntentBuilder('PlayIntent') \
-            .one_of('PlayKeyword', 'ResumeKeyword')
+        intent = IntentBuilder('PlayIntent').one_of('PlayKeyword', 'ResumeKeyword')
         self.register_intent(intent, self.handle_play)
 
-        intent = IntentBuilder('CurrentlyPlayingIntent') \
-            .require('CurrentlyPlayingKeyword')
+        intent = IntentBuilder('CurrentlyPlayingIntent').require('CurrentlyPlayingKeyword')
         self.register_intent(intent, self.handle_currently_playing)
 
     def _register_event_handlers(self):
@@ -66,14 +63,10 @@ class MediaSkill(MycroftSkill):
            while mycroft is speaking.
         """
         self.emitter.on('mycroft.media.stop', self._media_stop)
-        self.emitter.on('recognizer_loop:record_begin',
-                        self.lower_volume)
-        self.emitter.on('recognizer_loop:audio_output_start',
-                        self.lower_volume)
-        self.emitter.on('recognizer_loop:record_end',
-                        self.restore_volume)
-        self.emitter.on('recognizer_loop:audio_output_end',
-                        self.restore_volume)
+        self.emitter.on('recognizer_loop:record_begin', self.lower_volume)
+        self.emitter.on('recognizer_loop:audio_output_start', self.lower_volume)
+        self.emitter.on('recognizer_loop:record_end', self.restore_volume)
+        self.emitter.on('recognizer_loop:audio_output_end', self.restore_volume)
 
     def handle_next(self, message):
         """

@@ -1,6 +1,8 @@
 Mopidy Skill
 =====================
 
+```Still early days. I intend to extend this quite considerably.```
+
 A skill for playing music with the help of the Mopidy music server. Currently the skill supports playing local music by track, artist, album or genre.
 
 ### Requirements
