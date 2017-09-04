@@ -17,12 +17,26 @@ class Mopidy(object):
         self.volume_low = 3
         self.volume_high = 100
 
-    def find_artist(self, artist):
+    def find_artist(self, artist, filter=None):
         d = copy(_base_dict)
         d['method'] = 'core.library.search'
         d['params'] = {'artist': [artist]}
-        r = requests.post(self.url, data=json.dumps(d))
-        return r.json()['result'][1]['artists']
+        trackList = requests.post(self.url, data=json.dumps(d)).json()["result"][0]["tracks"]
+        return trackList
+
+    def find_genre(self, genre, filter=None):
+        d = copy(_base_dict)
+        d['method'] = 'core.library.search'
+        d['params'] = {'genre': [genre]}
+        trackList = requests.post(self.url, data=json.dumps(d)).json()["result"][0]["tracks"]
+        return trackList
+
+    def find_track(self, track, artist):
+        d = copy(_base_dict)
+        d['method'] = 'core.library.search'
+        d['params'] = {'track_name': [track], 'artist': [artist]}
+        trackList = requests.post(self.url, data=json.dumps(d)).json()["result"][0]["tracks"]
+        return trackList
 
     def get_playlists(self, filter=None):
         print "GETTING PLAYLISTS"
@@ -33,6 +47,13 @@ class Mopidy(object):
             return r.json()['result']
         else:
             return [l for l in r.json()['result'] if filter + ':' in l['uri']]
+
+    def find_artist_album(self, album, artist, filter=None):
+        d = copy(_base_dict)
+        d['method'] = 'core.library.search'
+        d['params'] = {'album': [album], 'artist': [artist]}
+        trackList = requests.post(self.url, data=json.dumps(d)).json()["result"][0]["tracks"]
+        return trackList
 
     def find_album(self, album, filter=None):
         d = copy(_base_dict)
@@ -163,6 +184,10 @@ class Mopidy(object):
             ret = ret + self.get_tracks(t)
         return ret
 
+    def get_local_tracks(self):
+        p = self.browse('local:directory?type=track')
+        return {e['name']: e for e in p if e['type'] == 'track'}
+
     def get_local_albums(self):
         p = self.browse('local:directory?type=album')
         return {e['name']: e for e in p if e['type'] == 'album'}
@@ -180,22 +205,3 @@ class Mopidy(object):
         p = self.get_playlists('m3u')
         print "RETURNING PLAYLISTS"
         return {e['name']: e for e in p}
-
-    def get_spotify_playlists(self):
-        p = self.get_playlists('spotify')
-        return {e['name'].split('(by')[0].strip().lower(): e for e in p}
-
-    def get_gmusic_albums(self):
-        p = self.browse('gmusic:album')
-        print p
-        p = {e['name']: e for e in p if e['type'] == 'directory'}
-        print p
-        return {e.split(' - ')[1]: p[e] for e in p}
-
-    def get_gmusic_artists(self):
-        p = self.browse('gmusic:artist')
-        return {e['name']: e for e in p if e['type'] == 'directory'}
-
-    def get_gmusic_radio(self):
-        p = self.browse('gmusic:radio')
-        return {e['name']: e for e in p if e['type'] == 'directory'}

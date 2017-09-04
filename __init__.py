@@ -4,14 +4,13 @@ from os.path import dirname, abspath, basename
 from adapt.intent import IntentBuilder
 from mycroft.messagebus.message import Message
 
-
 import time
-
 import requests
+import json
 
 from os.path import dirname
-
 from mycroft.util.log import getLogger
+from nested_lookup import nested_lookup
 
 sys.path.append(abspath(dirname(__file__)))
 Mopidy = __import__('mopidypost').Mopidy
@@ -43,66 +42,32 @@ class MopidySkill(MediaSkill):
             time.sleep(10)
             self.emitter.emit(Message(self.name + '.connect'))
             return
-
         logger.info('Connected to mopidy server')
+
+        logger.info('Loading content')
+        self.tracks = {}
         self.albums = {}
         self.artists = {}
         self.genres = {}
-        self.playlists = {}
-        self.radios = {}
+        self.tracks = self.mopidy.get_local_tracks()
+        self.albums = self.mopidy.get_local_albums()
+        self.artists = self.mopidy.get_local_artists()
+        self.genres = self.mopidy.get_local_genres()
 
-        logger.info('Loading content')
-        self.albums['gmusic'] = self.mopidy.get_gmusic_albums()
-        self.artists['gmusic'] = self.mopidy.get_gmusic_artists()
-        self.genres['gmusic'] = self.mopidy.get_gmusic_radio()
-        self.playlists['gmusic'] = {}
+        playTrackIntent = IntentBuilder('PlayTrackIntent').require('Track').require('Artist').build()
+        self.register_intent(playTrackIntent, self.handle_play_playlist)
 
-        self.albums['local'] = self.mopidy.get_local_albums()
-        self.artists['local'] = self.mopidy.get_local_artists()
-        self.genres['local'] = self.mopidy.get_local_genres()
-        self.playlists['local'] = self.mopidy.get_local_playlists()
+        playAlbumIntent = IntentBuilder('PlayAlbumIntent').require('Album').require('Artist').build()
+        self.register_intent(playAlbumIntent, self.handle_play_playlist)
 
-        self.albums['spotify'] = {}
-        self.artists['spotify'] = {}
-        self.genres['spotify'] = {}
-        self.playlists['spotify'] = self.mopidy.get_spotify_playlists()
+        playArtistIntent = IntentBuilder('PlayArtistIntent').require('Artist').build()
+        self.register_intent(playArtistIntent, self.handle_play_playlist)
 
-        self.playlist = {}
-        for loc in ['local', 'gmusic', 'spotify']:
-            logger.info(loc)
-            self.playlist.update(self.playlists[loc])
-            logger.info(loc)
-            self.playlist.update(self.genres[loc])
-            logger.info(loc)
-            self.playlist.update(self.artists[loc])
-            logger.info(loc)
-            self.playlist.update(self.albums[loc])
-
-        self.register_vocabulary(self.name, 'NameKeyword')
-        for p in self.playlist.keys():
-            logger.debug("Playlist: " + p)
-            self.register_vocabulary(p, 'PlaylistKeyword' + self.name)
-        intent = IntentBuilder('PlayPlaylistIntent' + self.name)\
-            .require('PlayKeyword')\
-            .require('PlaylistKeyword' + self.name)\
-            .build()
-        self.register_intent(intent, self.handle_play_playlist)
-        intent = IntentBuilder('PlayFromIntent' + self.name)\
-            .require('PlayKeyword')\
-            .require('PlaylistKeyword')\
-            .require('NameKeyword')\
-            .build()
-        self.register_intent(intent, self.handle_play_playlist)
-
-        intent = IntentBuilder('SearchSpotifyIntent' + self.name)\
-            .require('SearchKeyword')\
-            .require('Source')\
-            .require('SpotifyKeyword')\
-            .build()
-        self.register_intent(intent, self.search_spotify)
+        playGenreIntent = IntentBuilder('PlayGenreIntent').require('Genre').build()
+        self.register_intent(playGenreIntent, self.handle_play_playlist)
 
     def initialize(self):
-        logger.info('initializing Mopidy skill')
+        logger.info('Initializing Mopidy skill')
         super(MopidySkill, self).initialize()
         self.load_data_files(dirname(__file__))
 
@@ -110,19 +75,44 @@ class MopidySkill(MediaSkill):
         self.emitter.emit(Message(self.name + '.connect'))
 
     def play(self, tracks):
+        logger.info("==== ++++ ==== PLAYING TRACKS")
         self.mopidy.clear_list()
         self.mopidy.add_list(tracks)
         self.mopidy.play()
 
     def handle_play_playlist(self, message):
-        p = message.data.get('PlaylistKeyword' + self.name)
-        self.before_play()
-        self.speak("Playing " + str(p))
-        time.sleep(3)
-        if self.playlist[p]['type'] == 'playlist':
-            tracks = self.mopidy.get_items(self.playlist[p]['uri'])
-        else:
-            tracks = self.mopidy.get_tracks(self.playlist[p]['uri'])
+        artist = message.data.get('Artist')
+        album = message.data.get('Album')
+        track = message.data.get('Track')
+        genre = message.data.get('Genre')
+        keepUrls = ['local:track:']
+
+        ## Play Track by specific artist
+        if artist and track:
+            logger.info('==++== PLAY TRACK: ' + artist + ' - ' + track)
+            try:
+                tracks = self.mopidy.find_track(track, artist)
+            except:
+                ## Try with known grammar replacements
+                logger.info("==== No matches, trying again")
+                track.replace("we have", "we've")
+                tracks = self.mopidy.find_track(track, artist)
+
+        ## Play Album by specific artist
+        elif artist and album:
+            logger.info('==++== PLAY ALBUM: ' + artist + ' - ' + album)
+            tracks = self.mopidy.find_artist_album(album, artist)
+        ## Play everything by a specific artist
+        elif artist:
+            logger.info('==++== PLAY ARTIST: ' + artist)
+            tracks = self.mopidy.find_artist(artist)
+        ## Play Genre
+        elif genre:
+            logger.info('==++== PLAY GENRE: ' + genre)
+            tracks = self.mopidy.find_genre(genre)
+
+        tracks = list(nested_lookup('uri', tracks))
+        tracks[:] = [l for l in tracks if any(sub in l for sub in keepUrls)]
         self.play(tracks)
 
     def stop(self, message=None):
@@ -168,21 +158,6 @@ class MopidySkill(MediaSkill):
                 self.speak_dialog('currently_playing', data)
             time.sleep(6)
             self.mopidy.restore_volume()
-
-    def search_spotify(self, message):
-        logger.info('Search Spotify Intent')
-        logger.info(message.data)
-        name = message.data['Source']
-        logger.info(name)
-        results = self.mopidy.find_album(name, 'spotify')
-        if len(results) > 0:
-            tracks = results[0]
-        if results is not None:
-            logger.info(results)
-            if len(results) > 0:
-                self.play(results[0]['uri'])
-            else:
-                self.speak('couldn\'t find an album matching ' + name)
 
 
 def create_skill():
