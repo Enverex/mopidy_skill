@@ -1,7 +1,7 @@
 Mopidy Skill
 =====================
 
-```Still early days. I intend to extend this quite considerably.```
+`Still early days. I intend to extend this quite considerably.`
 
 A skill for playing music with the help of the Mopidy music server. Currently the skill supports playing local music by track, artist, album or genre.
 
@@ -26,7 +26,7 @@ Below the basic configuration needed is listed, for more details check out the o
 
 For playing music from the local file system or file share check under the heading
 
-` [local] `
+`[local]`
 
 and make sure the following config options are set according to your system
 
@@ -52,20 +52,38 @@ Mycroft needs to be pointed to the mopidy server. Add the following to `~/.mycro
 
 ### Running the skill
 
-Before starting mycroft, *mopidy* should be launched. This should probably be done as a system service.
+Before starting Mycroft, *Mopidy* needs to be launched. This should probably be done as a system service.
 All music is looked up "on the fly" so even music you've just added to your collection will be available for playback.
 
 ## Usage
 
-**local music**
-- the local music skill browses the local media directory and adds each artist, album and genre found as a play intent.
+- Your intent request performs a search within Mopidy, this can be a track, album, artist, etc.
 
-examples:
+Examples:
 
 `play track Walking on Broken Glass by Annie Lennox`
 
-`play album Armikrog OST`
+`play album `
 
 `play artist Terry Scott Taylor`
 
 `play some Rock Music`
+
+Regex raw examples:
+
+```
+play (?:the )?track (?P<Track>.*) by (?P<Artist>.*)
+play (?:the )?song (?P<Track>.*) by (?P<Artist>.*)
+
+play (?:the )?album (?P<Album>.*) by (?P<Artist>.*)
+
+play (?:the )?artist (?P<Artist>.*)
+play (?:the )?composer (?P<Artist>.*)
+play something by (?P<Artist>.*)
+
+play (?:the )?genre (?P<Genre>.*)
+play some (?P<Genre>.*) music
+
+play music from the year (?P<Year>\d+)
+play music from (?P<Year>19\d+)
+````
