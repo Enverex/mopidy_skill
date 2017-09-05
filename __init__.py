@@ -45,14 +45,14 @@ class MopidyLocalSkill(MediaSkill):
             return
 
         logger.info('Connected to Mopidy server. Initialising...')
-        self.tracks = {}
-        self.albums = {}
-        self.artists = {}
-        self.genres = {}
-        self.tracks = self.mopidy.get_local_tracks()
-        self.albums = self.mopidy.get_local_albums()
-        self.artists = self.mopidy.get_local_artists()
-        self.genres = self.mopidy.get_local_genres()
+        #self.tracks = {}
+        #self.albums = {}
+        #self.artists = {}
+        #self.genres = {}
+        #self.tracks = self.mopidy.get_local_tracks()
+        #self.albums = self.mopidy.get_local_albums()
+        #self.artists = self.mopidy.get_local_artists()
+        #self.genres = self.mopidy.get_local_genres()
 
         playTrackIntent = IntentBuilder('PlayTrackIntent').require('Track').require('Artist').build()
         self.register_intent(playTrackIntent, self.handle_play_playlist)
@@ -66,6 +66,9 @@ class MopidyLocalSkill(MediaSkill):
         playGenreIntent = IntentBuilder('PlayGenreIntent').require('Genre').build()
         self.register_intent(playGenreIntent, self.handle_play_playlist)
 
+        playYearIntent = IntentBuilder('PlayYearIntent').require('Year').build()
+        self.register_intent(playYearIntent, self.handle_play_playlist)
+
     def initialize(self):
         logger.info('Mopidy: Initializing skill...')
         super(MopidyLocalSkill, self).initialize()
@@ -75,7 +78,6 @@ class MopidyLocalSkill(MediaSkill):
         self.emitter.emit(Message(self.name + '.connect'))
 
     def play(self, tracks):
-        logger.info("Mopidy: Trying to play.")
         self.mopidy.clear_list()
         self.mopidy.add_list(tracks)
         self.mopidy.play()
@@ -85,31 +87,38 @@ class MopidyLocalSkill(MediaSkill):
         album = message.data.get('Album')
         track = message.data.get('Track')
         genre = message.data.get('Genre')
+        year = message.data.get('Year')
         keepUrls = ['local:track:']
 
         ## Play Track by specific artist
         if artist and track:
             logger.info('Mopidy: Trying to play track ' + track + ' by ' + artist)
             try:
-                tracks = self.mopidy.find_track(track, artist)
+                tracks = self.mopidy.library_search('track_name', track, 'artist', artist)
             except:
                 ## Try with known grammar replacements
                 logger.info("Mopidy: No matches, trying again with word variations.")
                 track.replace("we have", "we've")
-                tracks = self.mopidy.find_track(track, artist)
+                tracks = self.mopidy.library_search('track_name', track, 'artist', artist)
 
         ## Play Album by specific artist
         elif artist and album:
             logger.info('Mopidy: Trying to play album ' + album + ' by ' + artist)
-            tracks = self.mopidy.find_artist_album(album, artist)
+            tracks = self.mopidy.library_search('album', album, 'artist', artist)
         ## Play everything by a specific artist
         elif artist:
             logger.info('Mopidy: Trying to play artist ' + artist)
-            tracks = self.mopidy.find_artist(artist)
+            tracks = self.mopidy.library_search('artist', artist)
         ## Play Genre
         elif genre:
             logger.info('Mopidy: Trying to play genre ' + genre)
-            tracks = self.mopidy.find_genre(genre)
+            tracks = self.mopidy.library_search('genre', genre)
+	## Play Year
+	elif year:
+            logger.info('Mopidy: Trying to play year ' + year)
+            tracks = self.mopidy.library_search('date', year)
+
+	## Todo: Decade, Year, Playlist, Performer
 
         tracks = list(nested_lookup('uri', tracks))
         tracks[:] = [l for l in tracks if any(sub in l for sub in keepUrls)]

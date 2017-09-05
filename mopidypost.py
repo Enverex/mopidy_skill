@@ -14,59 +14,47 @@ class Mopidy(object):
         self.url = url + MOPIDY_API
         self.volume = None
         self.clear_list(force=True)
-        self.volume_low = 3
+        self.volume_low = 5
         self.volume_high = 100
 
-    def find_artist(self, artist, filter=None):
+
+    def library_search(self, field, search, field2=None, search2=None):
         d = copy(_base_dict)
         d['method'] = 'core.library.search'
-        d['params'] = {'artist': [artist]}
-        trackList = requests.post(self.url, data=json.dumps(d)).json()["result"][0]["tracks"]
+
+	if field2 is not None:
+	        d['params'] = {field: [search], field2: [search2]}
+	else:
+		d['params'] = {field: [search]}
+
+	searchResponse =  requests.post(self.url, data=json.dumps(d)).json()
+
+	try:
+		resultTest = searchResponse["result"][0]["tracks"]
+	except:
+		print ("Mopidy: No tracks found.")
+		return
+
+	trackList = []
+	for thisTrack in searchResponse["result"]:
+		trackList.append(thisTrack["tracks"])
+		## Sanity limit of 100
+		if len(trackList) > 100: break
         return trackList
 
-    def find_genre(self, genre, filter=None):
-        d = copy(_base_dict)
-        d['method'] = 'core.library.search'
-        d['params'] = {'genre': [genre]}
-        trackList = requests.post(self.url, data=json.dumps(d)).json()["result"][0]["tracks"]
-        return trackList
 
-    def find_track(self, track, artist):
-        d = copy(_base_dict)
-        d['method'] = 'core.library.search'
-        d['params'] = {'track_name': [track], 'artist': [artist]}
-        trackList = requests.post(self.url, data=json.dumps(d)).json()["result"][0]["tracks"]
-        return trackList
-
-    def get_playlists(self, filter=None):
-        print "GETTING PLAYLISTS"
+    def playlist_search(self, filter=None):
         d = copy(_base_dict)
         d['method'] = 'core.playlists.as_list'
-        r = requests.post(self.url, data=json.dumps(d))
-        if filter is None:
-            return r.json()['result']
-        else:
-            return [l for l in r.json()['result'] if filter + ':' in l['uri']]
+        trackArray = requests.post(self.url, data=json.dumps(d)).json()["result"]
+	trackList = []
+	for thisTrack in trackArray:
+		trackList.append(thisTrack["tracks"])
+		if len(trackList) > 50: break
 
-    def find_artist_album(self, album, artist, filter=None):
-        d = copy(_base_dict)
-        d['method'] = 'core.library.search'
-        d['params'] = {'album': [album], 'artist': [artist]}
-        trackList = requests.post(self.url, data=json.dumps(d)).json()["result"][0]["tracks"]
         return trackList
 
-    def find_album(self, album, filter=None):
-        d = copy(_base_dict)
-        d['method'] = 'core.library.search'
-        d['params'] = {'album': [album]}
-        r = requests.post(self.url, data=json.dumps(d))
-        l = [res['albums'] for res in r.json()['result'] if 'albums' in res]
-        if filter is None:
-            return l
-        else:
-            return [i for sl in l for i in sl if filter + ':' in i['uri']]
-
-    def find_exact(self, uris='null'):
+    def exact_search(self, uris='null'):
         d = copy(_base_dict)
         d['method'] = 'core.library.find_exact'
         d['params'] = {'uris': uris}
@@ -77,7 +65,6 @@ class Mopidy(object):
         d = copy(_base_dict)
         d['method'] = 'core.library.browse'
         d['params'] = {'uri': uri}
-        print "BROWSE"
         r = requests.post(self.url, data=json.dumps(d))
         if 'result' in r.json():
             return r.json()['result']

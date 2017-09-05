@@ -11,9 +11,9 @@ logger = getLogger(__name__)
 __author__ = 'forslund'
 
 
-class MopidyLocalSkill(MycroftSkill):
+class MediaSkill(MycroftSkill):
     """
-        The MopidyLocalSkill class is a base class for media skills containing
+        The MediaSkill class is a base class for media skills containing
         vocabulary and intents for the common functions expected by a media
         skill. In addition event handlers to lower volume when mycroft starts
         to speak and raise it again when (s)he stops.
@@ -23,14 +23,15 @@ class MopidyLocalSkill(MycroftSkill):
     """
 
     def __init__(self, name):
-        super(MopidyLocalSkill, self).__init__(name)
+        super(MediaSkill, self).__init__(name)
         self.isPlaying = False
         config = ConfigurationManager.get()
-        self.base_conf = config.get('MopidyLocalSkill')
+        self.base_conf = config.get('MediaSkill')
 
     def initialize(self):
-        logger.info('Initializing MopidyLocalSkill commons')
-        logger.info('loading vocab files from ' + join(dirname(__file__), 'vocab', self.lang))
+        logger.info('Initializing MediaSkill commons')
+        logger.info('loading vocab files from ' + join(dirname(__file__),
+                                                       'vocab', self.lang))
         self.load_vocab_files(join(dirname(__file__), 'vocab', self.lang))
 
         self._register_common_intents()
@@ -50,10 +51,12 @@ class MopidyLocalSkill(MycroftSkill):
         intent = IntentBuilder('PauseIntent').require('PauseKeyword')
         self.register_intent(intent, self.handle_pause)
 
-        intent = IntentBuilder('PlayIntent').one_of('PlayKeyword', 'ResumeKeyword')
+        intent = IntentBuilder('PlayIntent') \
+            .one_of('PlayKeyword', 'ResumeKeyword')
         self.register_intent(intent, self.handle_play)
 
-        intent = IntentBuilder('CurrentlyPlayingIntent').require('CurrentlyPlayingKeyword')
+        intent = IntentBuilder('CurrentlyPlayingIntent') \
+            .require('CurrentlyPlayingKeyword')
         self.register_intent(intent, self.handle_currently_playing)
 
     def _register_event_handlers(self):
@@ -63,10 +66,14 @@ class MopidyLocalSkill(MycroftSkill):
            while mycroft is speaking.
         """
         self.emitter.on('mycroft.media.stop', self._media_stop)
-        self.emitter.on('recognizer_loop:record_begin', self.lower_volume)
-        self.emitter.on('recognizer_loop:audio_output_start', self.lower_volume)
-        self.emitter.on('recognizer_loop:record_end', self.restore_volume)
-        self.emitter.on('recognizer_loop:audio_output_end', self.restore_volume)
+        self.emitter.on('recognizer_loop:record_begin',
+                        self.lower_volume)
+        self.emitter.on('recognizer_loop:audio_output_start',
+                        self.lower_volume)
+        self.emitter.on('recognizer_loop:record_end',
+                        self.restore_volume)
+        self.emitter.on('recognizer_loop:audio_output_end',
+                        self.restore_volume)
 
     def handle_next(self, message):
         """
