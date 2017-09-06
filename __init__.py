@@ -111,6 +111,7 @@ class MopidyLocalSkill(MediaSkill):
 			elif decadeWord == 'tens': decade = 1
 			elif decadeWord == 'twenties': decade = 1
 			else: logger.info('Mopidy: Unrecognised decade phrase ' + decadeWord)
+			decade = str(decade)
 
 		## Play Track by specific artist
 		if artist and track:
@@ -154,7 +155,7 @@ class MopidyLocalSkill(MediaSkill):
 		elif decade:
 			randomMode = True
 			## Remove the trailing 's' and zero (19x[xs] of match group)
-			decade = decade[:-2]
+			if len(decade) > 1: decade = decade[:-2]
 			## Assume 19XX if only centuries provided (19[x]xs of match group)
 			if len(decade) == 1: decade = '19' + decade;
 			logger.info('Mopidy: Trying to play music from the ' + decade + '0s')
@@ -173,7 +174,8 @@ class MopidyLocalSkill(MediaSkill):
 		## Randomise the tracklist if required
 		if randomMode: random.shuffle(trackList)
 
-		## Send off to play
+		## Shrink to a sane value (20 tracks) and send off to play
+		trackList = trackList[:20]
 		self.play(trackList)
 
 

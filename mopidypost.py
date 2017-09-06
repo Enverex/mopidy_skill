@@ -36,10 +36,7 @@ class Mopidy(object):
 		return
 
 	trackList = []
-	for thisTrack in searchResponse["result"]:
-		trackList.append(thisTrack["tracks"])
-		## Sanity limit of 100
-		if len(trackList) > 100: break
+	for thisTrack in searchResponse["result"]: trackList.append(thisTrack["tracks"])
         return trackList
 
 
