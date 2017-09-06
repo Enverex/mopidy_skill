@@ -61,15 +61,15 @@ All music is looked up "on the fly" so even music you've just added to your coll
 
 Examples:
 
-`play track Walking on Broken Glass by Annie Lennox`
-
-`play album `
-
-`play artist Terry Scott Taylor`
-
-`play some Rock Music`
-
-Regex raw examples:
+```
+play track Walking on Broken Glass by Annie Lennox
+play the song Lady Writer by Dire Straits
+play album The Pick Of Destiny by Tenacious D
+play artist Peter Gabriel
+play music from 1985
+play some Rock music
+```
+Raw examples of what the skill will respond to:
 
 ```
 play (?:the )?track (?P<Track>.*) by (?P<Artist>.*)
