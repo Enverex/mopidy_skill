@@ -48,20 +48,24 @@ play tracks performed by Paul Burgess
 Raw examples of what the skill will respond to:
 
 `play (?:the )?(track|song) (?P<Track>.*) by (?P<Artist>.*)`
+
 `play (?:the )?album (?P<Album>.*) by (?P<Artist>.*)`
 
 ```
 play (?:the )?(artist|composer) (?P<Artist>.*)
 play (?:music|something) by (?P<Artist>.*)
 ```
+
 ```
 play (?:tracks|music) from (?:the )?(?P<Decade>(?:16|17|18|19|20)?\d{1}0s)
 play (?:tracks|music) from (?:the )?(?P<WordDecade>thirties|fourties|fifties|sixties|seventies|eighties|nineties|naughties|tens)
 ```
+
 `play (?:tracks|music) from the year (?P<Year>(?:16|17|18|19|20)\d{4})`
 
 ```
 play (?:the )?genre (?P<Genre>.*)
 play (?:(?:me|us) )?some (?P<Genre>.*) music
 ```
+
 `play (?:tracks|music) (with band member|with performer|performed by) (?P<Performer>.*)`
