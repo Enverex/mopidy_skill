@@ -1,0 +1,15 @@
+play (?:the )?(track|song) (?P<Track>.*) by (?P<Artist>.*)
+
+play (?:the )?album (?P<Album>.*) by (?P<Artist>.*)
+
+play (?:the )?(artist|composer) (?P<Artist>.*)
+play (music|something) by (?P<Artist>.*)
+
+play (tracks|music) from the (?P<Decade>(?:19|20)?\d)0s
+play (tracks|music) from the (?P<WordDecade>thirties|fourties|fifties|sixties|seventies|eighties|nineties|naughties|tens)
+
+play music from (?:the year )?(?P<Year>(?:19|20)\d+)
+
+play (?:the )?genre (?P<Genre>.*)
+play (?:(me|us) )?some (?P<Genre>.*) music
+i'm in the mood for some (?P<Genre>.*) music
