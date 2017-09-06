@@ -30,8 +30,7 @@ class MediaSkill(MycroftSkill):
 
     def initialize(self):
         logger.info('Initializing MediaSkill commons')
-        logger.info('loading vocab files from ' + join(dirname(__file__),
-                                                       'vocab', self.lang))
+        logger.info('loading vocab files from ' + join(dirname(__file__), 'vocab', self.lang))
         self.load_vocab_files(join(dirname(__file__), 'vocab', self.lang))
 
         self._register_common_intents()
@@ -51,12 +50,10 @@ class MediaSkill(MycroftSkill):
         intent = IntentBuilder('PauseIntent').require('PauseKeyword')
         self.register_intent(intent, self.handle_pause)
 
-        intent = IntentBuilder('PlayIntent') \
-            .one_of('PlayKeyword', 'ResumeKeyword')
+        intent = IntentBuilder('ResumeIntent').require('ResumeKeyword')
         self.register_intent(intent, self.handle_play)
 
-        intent = IntentBuilder('CurrentlyPlayingIntent') \
-            .require('CurrentlyPlayingKeyword')
+        intent = IntentBuilder('CurrentlyPlayingIntent').require('CurrentlyPlayingKeyword')
         self.register_intent(intent, self.handle_currently_playing)
 
     def _register_event_handlers(self):

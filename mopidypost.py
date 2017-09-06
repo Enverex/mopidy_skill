@@ -71,6 +71,13 @@ class Mopidy(object):
         else:
             return None
 
+    def switch_random(self, modeSet=True):
+        d = copy(_base_dict)
+        d['method'] = 'set_random'
+        d['params'] = {'_random': modeSet}
+        r = requests.post(self.url, data=json.dumps(d))
+        return r
+
     def clear_list(self, force=False):
         if self.is_playing or force:
             d = copy(_base_dict)

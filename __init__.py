@@ -7,6 +7,7 @@ from mycroft.messagebus.message import Message
 import time
 import requests
 import json
+import random
 
 from os.path import dirname
 from mycroft.util.log import getLogger
@@ -63,6 +64,13 @@ class MopidyLocalSkill(MediaSkill):
 		playDecadeIntent = IntentBuilder('PlayDecadeIntent').require('Decade').build()
 		self.register_intent(playDecadeIntent, self.handle_play_playlist)
 
+		playDecadeWordIntent = IntentBuilder('PlayDecadeWordIntent').require('DecadeWord').build()
+		self.register_intent(playDecadeWordIntent, self.handle_play_playlist)
+
+		playPerformerIntent = IntentBuilder('PlayPerformerIntent').require('Performer').build()
+		self.register_intent(playPerformerIntent, self.handle_play_playlist)
+
+
 	def initialize(self):
 		logger.info('Mopidy: Initializing skill...')
 		super(MopidyLocalSkill, self).initialize()
@@ -71,14 +79,16 @@ class MopidyLocalSkill(MediaSkill):
 		self.emitter.on(self.name + '.connect', self._connect)
 		self.emitter.emit(Message(self.name + '.connect'))
 
+
 	def play(self, tracks):
 		self.mopidy.clear_list()
 		self.mopidy.add_list(tracks)
 		self.mopidy.play()
 
+
 	def handle_play_playlist(self, message):
 		keepUrls = ['local:track:']
-
+		randomMode = False
 		artist = message.data.get('Artist')
 		album = message.data.get('Album')
 		track = message.data.get('Track')
@@ -99,6 +109,7 @@ class MopidyLocalSkill(MediaSkill):
 			elif decadeWord == 'nineties': decade = 9
 			elif decadeWord == 'naughties': decade = 0
 			elif decadeWord == 'tens': decade = 1
+			elif decadeWord == 'twenties': decade = 1
 			else: logger.info('Mopidy: Unrecognised decade phrase ' + decadeWord)
 
 		## Play Track by specific artist
@@ -123,35 +134,46 @@ class MopidyLocalSkill(MediaSkill):
 
 		## Play everything by a specific artist
 		elif artist:
+			randomMode = True
 			logger.info('Mopidy: Trying to play artist ' + artist)
 			trackList = self.mopidy.library_search('artist', artist)
 
 		## Play a genre
 		elif genre:
+			randomMode = True
 			logger.info('Mopidy: Trying to play genre ' + genre)
 			trackList = self.mopidy.library_search('genre', genre)
 
 		## Play everything from a specific year
 		elif year:
+			randomMode = True
 			logger.info('Mopidy: Trying to play year ' + year)
 			trackList = self.mopidy.library_search('date', year)
 
 		## Play random songs from a specific decade
 		elif decade:
-			## Assume 19XX if only centuries provided
-			if decade.len() == 1:
-				decade = '19' + decade;
-			logger.info('Mopidy: Trying to play decade ' + decade)
-			trackList = self.mopidy.library_search('date', decade)
+			randomMode = True
+			## Remove the trailing 's' and zero (19x[xs] of match group)
+			decade = decade[:-2]
+			## Assume 19XX if only centuries provided (19[x]xs of match group)
+			if len(decade) == 1: decade = '19' + decade;
+			logger.info('Mopidy: Trying to play music from the ' + decade + '0s')
+			trackList = self.mopidy.library_search('date', decade + '*')
 
 		## Play tracks with a specific performer / member
 		elif performer:
+			randomMode = True
 			logger.info('Mopidy: Trying to music tracks with performer ' + performer)
-			trackList = self.mopidy.library_search('performer', performer)
+			trackList = self.mopidy.library_search('performer', '*' + performer + '*')
 
-		## Reprocess track list to only local files
+		## Crop tracklist to only proper track URIs
 		trackList = list(nested_lookup('uri', trackList))
 		trackList[:] = [l for l in trackList if any(sub in l for sub in keepUrls)]
+
+		## Randomise the tracklist if required
+		if randomMode: random.shuffle(trackList)
+
+		## Send off to play
 		self.play(trackList)
 
 

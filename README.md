@@ -3,7 +3,7 @@ Mopidy Skill
 
 `Still early days. I intend to extend this quite considerably.`
 
-A skill for playing music with the help of the Mopidy music server. Currently the skill supports playing local music by track, artist, album or genre.
+A skill for playing music with the help of the Mopidy music server. Currently the skill supports playing local music by track, artist, album, year or genre.
 
 ### Requirements
 
@@ -13,32 +13,6 @@ This skill require mopidy and some related packages to function:
 - mopidy-local-mysql
 
 Most of these requirements can be installed through the standard method for the OS. I recommend using the official [mopidy install guide](https://docs.mopidy.com/en/latest/installation/) to get the software for your specific system.
-
-### Mopidy Setup
-
-Mopidy configuration is complex and this description will only touch the areas that are relevant for the skill.
-
-Mopidy settings are made in *~/.config/mopidy/mopidy.conf* for a desktop install and under */etc/mopidy/mopidy.conf* for picroft/Mark-1 (if it doesn't exist it needs to be created).
-
-Below the basic configuration needed is listed, for more details check out the official documentation at https://www.mopidy.com
-
-#### Local music
-
-For playing music from the local file system or file share check under the heading
-
-`[local]`
-
-and make sure the following config options are set according to your system
-
-```
-enabled = true
-library = sqlite
-media_dir = PATH_TO_YOUR_MUSIC
-```
-
-after this is done scan the local collection by running
-
-` mopidy local scan `
 
 ### Mycroft Setup
 
@@ -59,7 +33,7 @@ All music is looked up "on the fly" so even music you've just added to your coll
 
 - Your intent request performs a search within Mopidy, this can be a track, album, artist, etc.
 
-Examples:
+Simple Examples:
 
 ```
 play track Walking on Broken Glass by Annie Lennox
@@ -68,22 +42,26 @@ play album The Pick Of Destiny by Tenacious D
 play artist Peter Gabriel
 play music from 1985
 play some Rock music
+play music from the 1970s
+play tracks performed by Paul Burgess
 ```
 Raw examples of what the skill will respond to:
 
+`play (?:the )?(track|song) (?P<Track>.*) by (?P<Artist>.*)`
+`play (?:the )?album (?P<Album>.*) by (?P<Artist>.*)`
+
 ```
-play (?:the )?track (?P<Track>.*) by (?P<Artist>.*)
-play (?:the )?song (?P<Track>.*) by (?P<Artist>.*)
+play (?:the )?(artist|composer) (?P<Artist>.*)
+play (?:music|something) by (?P<Artist>.*)
+```
+```
+play (?:tracks|music) from (?:the )?(?P<Decade>(?:16|17|18|19|20)?\d{1}0s)
+play (?:tracks|music) from (?:the )?(?P<WordDecade>thirties|fourties|fifties|sixties|seventies|eighties|nineties|naughties|tens)
+```
+`play (?:tracks|music) from the year (?P<Year>(?:16|17|18|19|20)\d{4})`
 
-play (?:the )?album (?P<Album>.*) by (?P<Artist>.*)
-
-play (?:the )?artist (?P<Artist>.*)
-play (?:the )?composer (?P<Artist>.*)
-play something by (?P<Artist>.*)
-
+```
 play (?:the )?genre (?P<Genre>.*)
-play some (?P<Genre>.*) music
-
-play music from the year (?P<Year>\d+)
-play music from (?P<Year>19\d+)
-````
+play (?:(?:me|us) )?some (?P<Genre>.*) music
+```
+`play (?:tracks|music) (with band member|with performer|performed by) (?P<Performer>.*)`
