@@ -139,7 +139,7 @@ class MopidyLocalSkill(MediaSkill):
 		## Play random songs from a specific decade
 		elif decade:
 			## Assume 19XX if only centuries provided
-			if decade.len(1):
+			if decade.len() == 1:
 				decade = '19' + decade;
 			logger.info('Mopidy: Trying to play decade ' + decade)
 			trackList = self.mopidy.library_search('date', decade)
