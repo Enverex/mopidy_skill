@@ -1,28 +1,26 @@
 import sys
-from os.path import dirname, abspath, basename
-
-from adapt.intent import IntentBuilder
-from mycroft.messagebus.message import Message
-
 import time
 import requests
 import json
 import random
 
-from os.path import dirname
-from mycroft.util.log import getLogger
+from os.path import dirname, abspath, basename
 from nested_lookup import nested_lookup
+from mycroft.skills.core import MycroftSkill
+from mycroft.configuration import ConfigurationManager
+from mycroft.messagebus.message import Message
+from mycroft.util.log import getLogger
+from adapt.intent import IntentBuilder
 
 sys.path.append(abspath(dirname(__file__)))
 Mopidy = __import__('mopidypost').Mopidy
-MediaSkill = __import__('media').MediaSkill
 
 logger = getLogger(abspath(__file__).split('/')[-2])
 __author__ = 'Enverex'
 ## Original skill author: forslund
 
 
-class MopidyLocalSkill(MediaSkill):
+class MopidyLocalSkill(MycroftSkill):
 	def __init__(self):
 		super(MopidyLocalSkill, self).__init__('Mopidy Local Skill')
 		self.mopidy = None
@@ -31,6 +29,9 @@ class MopidyLocalSkill(MediaSkill):
 
 	def _connect(self, message):
 		url = 'http://localhost:6680'
+		config = ConfigurationManager.get()
+		self.base_conf = config.get('MopidySkill')
+
 		if self.base_conf:
 			url = self.base_conf.get('mopidy_url', None)
 		if self.config:
@@ -73,13 +74,17 @@ class MopidyLocalSkill(MediaSkill):
 		playPerformerIntent = IntentBuilder('PlayPerformerIntent').require('Performer').build()
 		self.register_intent(playPerformerIntent, self.handle_play_playlist)
 
+		## Listen for event requests from Mycroft core
+		self.add_event('mycroft.audio.service.pause', self.handle_pause)
+		self.add_event('mycroft.audio.service.next', self.handle_next)
+		self.add_event('mycroft.audio.service.prev', self.handle_prev)
 
 	def initialize(self):
 		logger.info('Mopidy: Initializing skill...')
 		super(MopidyLocalSkill, self).initialize()
 		self.load_data_files(dirname(__file__))
 
-		self.emitter.on(self.name + '.connect', self._connect)
+		self.add_event(self.name + '.connect', self._connect)
 		self.emitter.emit(Message(self.name + '.connect'))
 
 
@@ -205,16 +210,20 @@ class MopidyLocalSkill(MediaSkill):
 			self.mopidy.stop()
 
 	def handle_next(self, message):
+		logger.info('Mopidy: Playing next track.')
 		self.mopidy.next()
 
 	def handle_prev(self, message):
+		logger.info('Mopidy: Playing previous track.')
 		self.mopidy.previous()
 
 	def handle_pause(self, message):
+		logger.info('Mopidy: Pausing playback.')
 		self.mopidy.pause()
 
 	def handle_play(self, message):
 		## Resume works as play/resume
+		logger.info('Mopidy: Starting/continuing playback.')
 		self.mopidy.resume()
 
 	def lower_volume(self, message):
