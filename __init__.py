@@ -96,7 +96,7 @@ class MopidyLocalSkill(MediaSkill):
 			self.mopidy.next()
 		elif performAction == 'previous':
 			self.mopidy.previous()
-		elif performAction == 'play' or performAction == 'resume' or performAction == 'continue':
+		elif performAction == 'play' or performAction == 'resume' or performAction == 'continue' or performAction == 'unpause':
 			self.mopidy.resume()
 		elif performAction == 'pause':
 			self.mopidy.pause()
@@ -144,7 +144,7 @@ class MopidyLocalSkill(MediaSkill):
 				track.replace("they have", "they've")
 				track.replace("they are", "they're")
 				trackList = self.mopidy.library_search('track_name', track, 'artist', artist)
-			
+
 		## Todo: Playlist, Conversation, Moods?
 
 		## Play album by a specific artist
@@ -234,9 +234,9 @@ class MopidyLocalSkill(MediaSkill):
 			self.mopidy.lower_volume()
 			time.sleep(1)
 			if 'album' in current_track:
-				data = {'current_track': current_track['name'], 'artist': current_track['album']['artists'][0]['name']}
+				data = {'current_track': current_track['name'], 'artist': current_track['album']['artists'][0]['name'], 'album': current_track['album']['name']}
 				self.speak_dialog('currently_playing', data)
-			time.sleep(5)
+			time.sleep(8)
 			self.mopidy.restore_volume()
 
 
