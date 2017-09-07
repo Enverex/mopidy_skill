@@ -50,6 +50,9 @@ class MopidyLocalSkill(MycroftSkill):
 		playControllerIntent = IntentBuilder('PlayControllerIntent').require('Action').build()
 		self.register_intent(playControllerIntent, self.handle_playlist_control)
 
+		currentlyPlayingIntent = IntentBuilder('CurrentlyPlayingIntent').require('CurrentlyPlayingKeyword')
+		self.register_intent(currentlyPlayingIntent, self.handle_currently_playing)
+
 		playTrackIntent = IntentBuilder('PlayTrackIntent').require('Track').require('Artist').build()
 		self.register_intent(playTrackIntent, self.handle_play_playlist)
 
@@ -79,6 +82,10 @@ class MopidyLocalSkill(MycroftSkill):
 		self.add_event('mycroft.audio.service.stop', self.handle_stop)
 		self.add_event('mycroft.audio.service.next', self.handle_next)
 		self.add_event('mycroft.audio.service.prev', self.handle_prev)
+		self.add_event('recognizer_loop:record_begin', self.lower_volume)
+		self.add_event('recognizer_loop:audio_output_start', self.lower_volume)
+		self.add_event('recognizer_loop:record_end', self.restore_volume)
+		self.add_event('recognizer_loop:audio_output_end', self.restore_volume)
 
 	def initialize(self):
 		logger.info('Mopidy: Initializing skill...')
