@@ -46,7 +46,7 @@ class MopidyLocalSkill(MediaSkill):
 			self.emitter.emit(Message(self.name + '.connect'))
 			return
 
-		playControllerIntent = IntentBuilder('ClayControllerIntent').require('Action').build()
+		playControllerIntent = IntentBuilder('PlayControllerIntent').require('Action').build()
 		self.register_intent(playControllerIntent, self.handle_playlist_control)
 
 		playTrackIntent = IntentBuilder('PlayTrackIntent').require('Track').require('Artist').build()
