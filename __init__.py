@@ -28,14 +28,14 @@ class MopidyLocalSkill(MycroftSkill):
 		self.connection_attempts = 0
 
 	def _connect(self, message):
-		url = 'http://localhost:6680'
-		config = ConfigurationManager.get()
-		self.base_conf = config.get('MopidySkill')
+		## Use user specified URL, otherwise fall back to Mopidy default
+		try:
+			confirUrl = ConfigurationManager.get().get('MopidySkill').get('mopidy_url', None)
+			url = confirUrl
+		except:
+			url = 'http://localhost:6680'
 
-		if self.base_conf:
-			url = self.base_conf.get('mopidy_url', None)
-		if self.config:
-			url = self.config.get('mopidy_url', url)
+		## Try and connect, retry after a delay if it fails
 		try:
 			self.mopidy = Mopidy(url)
 			logger.info('Mopidy: Connected to server. Initialising...')
@@ -76,6 +76,7 @@ class MopidyLocalSkill(MycroftSkill):
 
 		## Listen for event requests from Mycroft core
 		self.add_event('mycroft.audio.service.pause', self.handle_pause)
+		self.add_event('mycroft.audio.service.stop', self.handle_stop)
 		self.add_event('mycroft.audio.service.next', self.handle_next)
 		self.add_event('mycroft.audio.service.prev', self.handle_prev)
 

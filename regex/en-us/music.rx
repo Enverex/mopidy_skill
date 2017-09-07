@@ -1,6 +1,3 @@
-(?:music|song|track|playback) (?P<Action>unpause|resume|play|continue|pause|stop)
-(?P<Action>unpause|resume|play|continue|pause|stop) (?:music|song|track|playback)
-play (?P<Action>next|previous) (?:song|track)
 play (?:the )?(track|song) (?P<Track>.*) by (?P<Artist>.*)
 play (?:the )?album (?P<Album>.*) by (?P<Artist>.*)
 play (?:the )?(artist|composer) (?P<Artist>.*)
