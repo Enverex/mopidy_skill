@@ -98,15 +98,15 @@ class MopidyLocalSkill(MycroftSkill):
 	def handle_playlist_control(self, message):
 		performAction = message.data.get('Action')
 		if performAction == 'next':
-			self.mopidy.next()
+			self.handle_next()
 		elif performAction == 'previous':
-			self.mopidy.previous()
+			self.handle_prev()
 		elif performAction == 'play' or performAction == 'resume' or performAction == 'continue' or performAction == 'unpause':
-			self.mopidy.resume()
+			self.handle_play()
 		elif performAction == 'pause':
-			self.mopidy.pause()
+			self.handle_pause()
 		elif performAction == 'stop':
-			self.mopidy.stop()
+			self.handle_stop()
 
 
 	## Playlist additions
@@ -203,41 +203,41 @@ class MopidyLocalSkill(MycroftSkill):
 		self.play(trackList)
 
 
-	def stop(self, message=None):
+	def handle_stop(self, message=None):
 		logger.info('Mopidy: Clearing playlist and stopping playback.')
 		if self.mopidy:
 			self.mopidy.clear_list()
 			self.mopidy.stop()
 
-	def handle_next(self, message):
+	def handle_next(self, message=None):
 		logger.info('Mopidy: Playing next track.')
 		self.mopidy.next()
 
-	def handle_prev(self, message):
+	def handle_prev(self, message=None):
 		logger.info('Mopidy: Playing previous track.')
 		self.mopidy.previous()
 
-	def handle_pause(self, message):
+	def handle_pause(self, message=None):
 		logger.info('Mopidy: Pausing playback.')
 		self.mopidy.pause()
 
-	def handle_play(self, message):
+	def handle_play(self, message=None):
 		## Resume works as play/resume
 		logger.info('Mopidy: Starting/continuing playback.')
 		self.mopidy.resume()
 
-	def lower_volume(self, message):
+	def lower_volume(self, message=None):
 		logger.info('Mopidy: Lowering volume.')
 		self.mopidy.lower_volume()
 		self.volume_is_low = True
 
-	def restore_volume(self, message):
+	def restore_volume(self, message=None):
 		if self.volume_is_low:
 			logger.info('Mopidy: Restoring volume.')
 			self.mopidy.restore_volume()
 			self.volume_is_low = False
 
-	def handle_currently_playing(self, message):
+	def handle_currently_playing(self, message=None):
 		current_track = self.mopidy.currently_playing()
 		if current_track is not None:
 			self.mopidy.lower_volume()
