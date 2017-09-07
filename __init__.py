@@ -246,15 +246,21 @@ class MopidyLocalSkill(MycroftSkill):
 			self.volume_is_low = False
 
 	def handle_currently_playing(self, message=None):
+		logger.info('Mopidy: Reporting currently playing track.')
 		current_track = self.mopidy.currently_playing()
-		if current_track is not None:
-			self.mopidy.lower_volume()
-			time.sleep(1)
+		if current_track is not None and current_track['name'] is not '':
 			if 'album' in current_track:
+				self.mopidy.lower_volume()
+				time.sleep(1)
 				data = {'current_track': current_track['name'], 'artist': current_track['album']['artists'][0]['name'], 'album': current_track['album']['name']}
 				self.speak_dialog('currently_playing', data)
-			time.sleep(8)
-			self.mopidy.restore_volume()
+				time.sleep(8)
+				self.mopidy.restore_volume()
+				return
+
+		self.speak("Nothing is currently playing")
+		time.sleep(3)
+		self.mopidy.restore_volume()
 
 
 def create_skill():
