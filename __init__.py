@@ -46,6 +46,9 @@ class MopidyLocalSkill(MediaSkill):
 			self.emitter.emit(Message(self.name + '.connect'))
 			return
 
+		playControllerIntent = IntentBuilder('ClayControllerIntent').require('Action').build()
+		self.register_intent(playControllerIntent, self.handle_playlist_control)
+
 		playTrackIntent = IntentBuilder('PlayTrackIntent').require('Track').require('Artist').build()
 		self.register_intent(playTrackIntent, self.handle_play_playlist)
 
@@ -86,6 +89,22 @@ class MopidyLocalSkill(MediaSkill):
 		self.mopidy.play()
 
 
+	## Basic media controls
+	def handle_playlist_control(self, message):
+		performAction = message.data.get('Action')
+		if performAction == 'next':
+			self.mopidy.next()
+		elif performAction == 'previous':
+			self.mopidy.previous()
+		elif performAction == 'play' or performAction == 'resume' or performAction == 'continue':
+			self.mopidy.resume()
+		elif performAction == 'pause':
+			self.mopidy.pause()
+		elif performAction == 'stop':
+			self.mopidy.stop()
+
+
+	## Playlist additions
 	def handle_play_playlist(self, message):
 		keepUrls = ['local:track:']
 		randomMode = False

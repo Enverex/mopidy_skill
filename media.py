@@ -41,18 +41,6 @@ class MediaSkill(MycroftSkill):
            Register common intents, these include basically all intents
            except the intents to start playback.
         """
-        intent = IntentBuilder('NextIntent').require('NextKeyword')
-        self.register_intent(intent, self.handle_next)
-
-        intent = IntentBuilder('PrevIntent').require('PrevKeyword')
-        self.register_intent(intent, self.handle_prev)
-
-        intent = IntentBuilder('PauseIntent').require('PauseKeyword')
-        self.register_intent(intent, self.handle_pause)
-
-        intent = IntentBuilder('ResumeIntent').require('ResumeKeyword')
-        self.register_intent(intent, self.handle_play)
-
         intent = IntentBuilder('CurrentlyPlayingIntent').require('CurrentlyPlayingKeyword')
         self.register_intent(intent, self.handle_currently_playing)
 
