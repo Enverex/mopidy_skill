@@ -18,6 +18,7 @@ class Mopidy(object):
         self.volume_high = 100
 
 
+	## Take up to 2 fields and values, then return a list of tracks matching those values
     def library_search(self, field, search, field2=None, search2=None):
         d = copy(_base_dict)
         d['method'] = 'core.library.search'
@@ -33,7 +34,7 @@ class Mopidy(object):
 		print (searchResponse["result"][0]["tracks"][0]["genre"])
 		resultTest = searchResponse["result"][0]["tracks"]
 	except:
-		self.speak("No suitable music found")
+		self.speak("No matching music found")
 		print ("Mopidy: No tracks found.")
 		return
 
@@ -41,7 +42,7 @@ class Mopidy(object):
 	for thisTrack in searchResponse["result"]: trackList.append(thisTrack["tracks"])
         return trackList
 
-
+	## Take a list of genres and an artist name, return a list of tracks excluding ones by that artist
     def get_similar_tracks(self, genreList, excludeArtist):
         d = copy(_base_dict)
         d['method'] = 'core.library.search'
@@ -62,11 +63,14 @@ class Mopidy(object):
 
         return trackList
 
-
-    def get_artist_genres(self, artist):
+	## Take an artist name (optionally a track name too) and return a list of genres
+    def get_artist_genres(self, artist, track=None):
         d = copy(_base_dict)
         d['method'] = 'core.library.search'
-        d['params'] = {'artist': [artist]}
+		if track:
+			d['params'] = {'artist': [artist], 'track_name': [track]}
+        else:
+			d['params'] = {'artist': [artist]}
 
 	searchResponse =  requests.post(self.url, data=json.dumps(d)).json()
 
@@ -76,7 +80,7 @@ class Mopidy(object):
 	except:
 		print ("Mopidy: No genres found for this artist.")
 
-
+	## Get list of tracks from a specific playlist
     def playlist_search(self, filter=None):
         d = copy(_base_dict)
         d['method'] = 'core.playlists.as_list'
@@ -88,6 +92,7 @@ class Mopidy(object):
 
         return trackList
 
+	## Do an exact name search rather than normal wildcard search
     def exact_search(self, uris='null'):
         d = copy(_base_dict)
         d['method'] = 'core.library.find_exact'

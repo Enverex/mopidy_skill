@@ -1,3 +1,11 @@
+#### Todo:
+## Mood Tag Support - not possible until Python.GST bindings are updated to include this tag
+##		and then Mopidy is updated to support that, then Mopidy-SQLite is updated to support that.
+## Randomise - Randomise the current track listing.
+## Enqueue - Ability to add to the current playlist queue rather than always starting a new one.
+## Conversation - Multi-part ability to ask for info on something, e.g. albums by artist and then
+##		respond which you want
+
 import sys
 import time
 import requests
@@ -17,7 +25,6 @@ Mopidy = __import__('mopidypost').Mopidy
 
 logger = getLogger(abspath(__file__).split('/')[-2])
 __author__ = 'Enverex'
-## Original skill author: forslund
 
 
 class MopidyLocalSkill(MycroftSkill):
@@ -41,12 +48,22 @@ class MopidyLocalSkill(MycroftSkill):
 			logger.info('Mopidy: Connected to server. Initialising...')
 		except:
 			if self.connection_attempts < 1:
-				logger.debug('Mopidy: Could not connect to server, will retry quietly')
+				logger.debug('Mopidy: Could not connect to server, will retry in 10 seconds.')
 			self.connection_attempts += 1
 			time.sleep(10)
 			self.emitter.emit(Message(self.name + '.connect'))
 			return
 
+	def initialize(self):
+		logger.info('Mopidy: Initializing skill...')
+		super(MopidyLocalSkill, self).initialize()
+		self.load_data_files(dirname(__file__))
+
+		## Connection loop
+		self.add_event(self.name + '.connect', self._connect)
+		self.emitter.emit(Message(self.name + '.connect'))
+
+		## Set up intents
 		playControllerIntent = IntentBuilder('PlayControllerIntent').require('Action').build()
 		self.register_intent(playControllerIntent, self.handle_playlist_control)
 
@@ -80,6 +97,9 @@ class MopidyLocalSkill(MycroftSkill):
 		playLikeIntent = IntentBuilder('PlayLikeIntent').require('LikeArtist').build()
 		self.register_intent(playLikeIntent, self.handle_play_playlist)
 
+		playLikeIntent = IntentBuilder('PlayLikeIntent').require('LikeSong').require('LikeSongArtist').build()
+		self.register_intent(playLikeIntent, self.handle_play_playlist)
+
 		## Listen for event requests from Mycroft core
 		self.add_event('mycroft.audio.service.pause', self.handle_pause)
 		self.add_event('mycroft.audio.service.stop', self.handle_stop)
@@ -90,15 +110,8 @@ class MopidyLocalSkill(MycroftSkill):
 		self.add_event('recognizer_loop:record_end', self.restore_volume)
 		self.add_event('recognizer_loop:audio_output_end', self.restore_volume)
 
-	def initialize(self):
-		logger.info('Mopidy: Initializing skill...')
-		super(MopidyLocalSkill, self).initialize()
-		self.load_data_files(dirname(__file__))
 
-		self.add_event(self.name + '.connect', self._connect)
-		self.emitter.emit(Message(self.name + '.connect'))
-
-
+	## Do play
 	def play(self, tracks):
 		self.mopidy.clear_list()
 		self.mopidy.add_list(tracks)
@@ -132,21 +145,23 @@ class MopidyLocalSkill(MycroftSkill):
 		decade = message.data.get('Decade')
 		decadeWord = message.data.get('DecadeWord')
 		performer = message.data.get('Performer')
-		like = message.data.get('LikeArtist')
+		likeArtist = message.data.get('LikeArtist')
+		likeSong = message.data.get('LikeSong')
 
 		## Translate a decade word into something usable by the normal decade block
 		if decadeWord:
-			if decadeWord == 'thirties': decade = 3
+			if decadeWord == 'naughties': decade = 0
+			elif decadeWord == 'tens': decade = 1
+			elif decadeWord == 'twenties': decade = 2
+			elif decadeWord == 'thirties': decade = 3
 			elif decadeWord == 'fourties': decade = 4
 			elif decadeWord == 'fifties': decade = 5
 			elif decadeWord == 'sixties': decade = 6
 			elif decadeWord == 'seventies': decade = 7
 			elif decadeWord == 'eighties': decade = 8
 			elif decadeWord == 'nineties': decade = 9
-			elif decadeWord == 'naughties': decade = 0
-			elif decadeWord == 'tens': decade = 1
-			elif decadeWord == 'twenties': decade = 1
 			else: logger.info('Mopidy: Unrecognised decade phrase ' + decadeWord)
+			## String needed for later concatination
 			decade = str(decade)
 
 		## Play Track by specific artist
@@ -162,8 +177,6 @@ class MopidyLocalSkill(MycroftSkill):
 				track.replace("they are", "they're")
 				trackList = self.mopidy.library_search('track_name', track, 'artist', artist)
 
-		## Todo: Playlist, Conversation, Moods?
-
 		## Play album by a specific artist
 		elif artist and album:
 			logger.info('Mopidy: Trying to play album ' + album + ' by ' + artist)
@@ -175,20 +188,28 @@ class MopidyLocalSkill(MycroftSkill):
 			logger.info('Mopidy: Trying to play artist ' + artist)
 			trackList = self.mopidy.library_search('artist', artist)
 
-		elif like:
+		## Try and find music like the requested artist (optionally a specific song) by matching their genres
+		elif likeArtist:
 			randomMode = True
-			logger.info('Mopidy: Trying to find music like artist ' + like)
 
-			artistGenres = self.mopidy.get_artist_genres(like)
-			trackList = self.mopidy.get_similar_tracks(artistGenres, like)
+			if likeSong:
+				logger.info('Mopidy: Trying to find music like ' + likeSong + ' by ' + likeArtist)
+				artistGenres = self.mopidy.get_artist_genres(likeArtist, likeSong)
+			else:
+				logger.info('Mopidy: Trying to find music like artist ' + likeArtist)
+
+			artistGenres = self.mopidy.get_artist_genres(likeArtist)
+			trackList = self.mopidy.get_similar_tracks(artistGenres, likeArtist)
 			## No matches, remove the lest significant genre and try again
-			if not trackList:
+			if not trackList and len(artistGenres) > 1:
 				artistGenres = artistGenres[:-1]
-				trackList = self.mopidy.get_similar_tracks(artistGenres, like)
-				if not trackList:
+				trackList = self.mopidy.get_similar_tracks(artistGenres, likeArtist)
+				if not trackList and len(artistGenres) > 1:
 					## No matches, remove the lest significant genre and try again
 					artistGenres = artistGenres[:-1]
-					trackList = self.mopidy.get_similar_tracks(artistGenres, like)
+					trackList = self.mopidy.get_similar_tracks(artistGenres, likeArtist)
+					if not trackList:
+						logger.info('Mopidy: Unable to find any music like ' + likeArtist)
 
 		## Play a genre
 		elif genre:
@@ -225,8 +246,8 @@ class MopidyLocalSkill(MycroftSkill):
 		## Randomise the tracklist if required
 		if randomMode: random.shuffle(trackList)
 
-		## Shrink to a sane value (20 tracks) and send off to play
-		trackList = trackList[:20]
+		## Shrink to a sane value (50 tracks) and send off to play
+		trackList = trackList[:50]
 		self.play(trackList)
 
 

@@ -9,3 +9,4 @@ play (?:the )?genre (?P<Genre>.*)
 play (?:(?:me|us) )?some (?P<Genre>.*) music
 play (?:tracks|music) (with band member|with performer|performed by) (?P<Performer>.*)
 play (?:music|tracks) (?:like|similar to) (?P<LikeArtist>.*)
+play (?:music|tracks) (?:like|similar to) the song (?P<LikeSong>.*) by (?P<LikeArtist>.*)
