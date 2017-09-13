@@ -64,40 +64,40 @@ class MopidyLocalSkill(MycroftSkill):
 		self.emitter.emit(Message(self.name + '.connect'))
 
 		## Set up intents
-		playControllerIntent = IntentBuilder('PlayControllerIntent').require('Action').build()
+		playControllerIntent = IntentBuilder('playControllerIntent').require('Action').build()
 		self.register_intent(playControllerIntent, self.handle_playlist_control)
 
-		currentlyPlayingIntent = IntentBuilder('CurrentlyPlayingIntent').require('CurrentlyPlayingKeyword')
+		currentlyPlayingIntent = IntentBuilder('currentlyPlayingIntent').require('CurrentlyPlayingKeyword')
 		self.register_intent(currentlyPlayingIntent, self.handle_currently_playing)
 
-		playTrackIntent = IntentBuilder('PlayTrackIntent').require('Track').require('Artist').build()
+		playTrackIntent = IntentBuilder('playTrackIntent').require('Track').require('Artist').build()
 		self.register_intent(playTrackIntent, self.handle_play_playlist)
 
-		playAlbumIntent = IntentBuilder('PlayAlbumIntent').require('Album').require('Artist').build()
+		playAlbumIntent = IntentBuilder('playAlbumIntent').require('Album').require('Artist').build()
 		self.register_intent(playAlbumIntent, self.handle_play_playlist)
 
-		playArtistIntent = IntentBuilder('PlayArtistIntent').require('Artist').build()
+		playArtistIntent = IntentBuilder('playArtistIntent').require('Artist').build()
 		self.register_intent(playArtistIntent, self.handle_play_playlist)
 
-		playGenreIntent = IntentBuilder('PlayGenreIntent').require('Genre').build()
+		playGenreIntent = IntentBuilder('playGenreIntent').require('Genre').build()
 		self.register_intent(playGenreIntent, self.handle_play_playlist)
 
-		playYearIntent = IntentBuilder('PlayYearIntent').require('Year').build()
+		playYearIntent = IntentBuilder('playYearIntent').require('Year').build()
 		self.register_intent(playYearIntent, self.handle_play_playlist)
 
-		playDecadeIntent = IntentBuilder('PlayDecadeIntent').require('Decade').build()
+		playDecadeIntent = IntentBuilder('playDecadeIntent').require('Decade').build()
 		self.register_intent(playDecadeIntent, self.handle_play_playlist)
 
-		playDecadeWordIntent = IntentBuilder('PlayDecadeWordIntent').require('DecadeWord').build()
+		playDecadeWordIntent = IntentBuilder('playDecadeWordIntent').require('DecadeWord').build()
 		self.register_intent(playDecadeWordIntent, self.handle_play_playlist)
 
-		playPerformerIntent = IntentBuilder('PlayPerformerIntent').require('Performer').build()
+		playPerformerIntent = IntentBuilder('playPerformerIntent').require('Performer').build()
 		self.register_intent(playPerformerIntent, self.handle_play_playlist)
 
-		playLikeIntent = IntentBuilder('PlayLikeIntent').require('LikeArtist').build()
-		self.register_intent(playLikeIntent, self.handle_play_playlist)
+		playLikeTrackIntent = IntentBuilder('playLikeTrackIntent').require('LikeSong').require('LikeArtist').build()
+		self.register_intent(playLikeTrackIntent, self.handle_play_playlist)
 
-		playLikeIntent = IntentBuilder('PlayLikeIntent').require('LikeSong').require('LikeSongArtist').build()
+		playLikeIntent = IntentBuilder('PlayLikeIntent').require('LikeArtist').build()
 		self.register_intent(playLikeIntent, self.handle_play_playlist)
 
 		## Listen for event requests from Mycroft core
@@ -136,6 +136,7 @@ class MopidyLocalSkill(MycroftSkill):
 	## Playlist additions
 	def handle_play_playlist(self, message):
 		keepUrls = ['local:track:']
+		trackList = None
 		randomMode = False
 		artist = message.data.get('Artist')
 		album = message.data.get('Album')
@@ -145,8 +146,8 @@ class MopidyLocalSkill(MycroftSkill):
 		decade = message.data.get('Decade')
 		decadeWord = message.data.get('DecadeWord')
 		performer = message.data.get('Performer')
-		likeArtist = message.data.get('LikeArtist')
 		likeSong = message.data.get('LikeSong')
+		likeArtist = message.data.get('LikeArtist')
 
 		## Translate a decade word into something usable by the normal decade block
 		if decadeWord:
@@ -192,24 +193,29 @@ class MopidyLocalSkill(MycroftSkill):
 		elif likeArtist:
 			randomMode = True
 
+			## Look for specific song, not just artist
 			if likeSong:
 				logger.info('Mopidy: Trying to find music like ' + likeSong + ' by ' + likeArtist)
 				artistGenres = self.mopidy.get_artist_genres(likeArtist, likeSong)
 			else:
 				logger.info('Mopidy: Trying to find music like artist ' + likeArtist)
+				artistGenres = self.mopidy.get_artist_genres(likeArtist)
 
-			artistGenres = self.mopidy.get_artist_genres(likeArtist)
-			trackList = self.mopidy.get_similar_tracks(artistGenres, likeArtist)
-			## No matches, remove the lest significant genre and try again
-			if not trackList and len(artistGenres) > 1:
-				artistGenres = artistGenres[:-1]
+			## Genres found
+			if artistGenres is not None:
 				trackList = self.mopidy.get_similar_tracks(artistGenres, likeArtist)
+				## No matches, remove the lest significant genre and try again
 				if not trackList and len(artistGenres) > 1:
-					## No matches, remove the lest significant genre and try again
 					artistGenres = artistGenres[:-1]
 					trackList = self.mopidy.get_similar_tracks(artistGenres, likeArtist)
-					if not trackList:
-						logger.info('Mopidy: Unable to find any music like ' + likeArtist)
+					if not trackList and len(artistGenres) > 1:
+						## No matches, remove the lest significant genre and try again
+						artistGenres = artistGenres[:-1]
+						trackList = self.mopidy.get_similar_tracks(artistGenres, likeArtist)
+				if not trackList:
+					logger.info('Mopidy: Unable to find any music like ' + likeArtist)
+			else:
+				logger.info('Mopidy: Aborting like lookup due to no genres.')
 
 		## Play a genre
 		elif genre:
@@ -239,16 +245,20 @@ class MopidyLocalSkill(MycroftSkill):
 			logger.info('Mopidy: Trying to music tracks with performer ' + performer)
 			trackList = self.mopidy.library_search('performer', '*' + performer + '*')
 
-		## Crop tracklist to only proper track URIs
-		trackList = list(nested_lookup('uri', trackList))
-		trackList[:] = [l for l in trackList if any(sub in l for sub in keepUrls)]
+		if trackList is not None:
+			## Crop tracklist to only proper track URIs
+			trackList = list(nested_lookup('uri', trackList))
+			trackList[:] = [l for l in trackList if any(sub in l for sub in keepUrls)]
 
-		## Randomise the tracklist if required
-		if randomMode: random.shuffle(trackList)
+			## Randomise the tracklist if required
+			if randomMode: random.shuffle(trackList)
 
-		## Shrink to a sane value (50 tracks) and send off to play
-		trackList = trackList[:50]
-		self.play(trackList)
+			## Shrink to a sane value (50 tracks) and send off to play
+			trackList = trackList[:50]
+			self.play(trackList)
+		else:
+			logger.info('Mopidy: No tracks found to play.')
+			self.speak("No matching music found")
 
 
 	def handle_stop(self, message=None):

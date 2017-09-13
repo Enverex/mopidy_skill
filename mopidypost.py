@@ -1,9 +1,8 @@
 import requests
-from copy import copy
 import json
+from copy import copy
 
 MOPIDY_API = '/mopidy/rpc'
-
 _base_dict = {'jsonrpc': '2.0', 'id': 1, 'params': {}}
 
 
@@ -24,7 +23,7 @@ class Mopidy(object):
 		d['method'] = 'core.library.search'
 
 		if field2 is not None:
-				d['params'] = {field: [search], field2: [search2]}
+			d['params'] = {field: [search], field2: [search2]}
 		else:
 			d['params'] = {field: [search]}
 
@@ -34,9 +33,7 @@ class Mopidy(object):
 			print (searchResponse["result"][0]["tracks"][0]["genre"])
 			resultTest = searchResponse["result"][0]["tracks"]
 		except:
-			self.speak("No matching music found")
-			print ("Mopidy: No tracks found.")
-			return
+			return None
 
 		trackList = []
 		for thisTrack in searchResponse["result"]: trackList.append(thisTrack["tracks"])
@@ -69,8 +66,10 @@ class Mopidy(object):
 		d['method'] = 'core.library.search'
 		if track is not None:
 			d['params'] = {'artist': [artist], 'track_name': [track]}
+			print ("Mopidy: Doing artist and track search.")
 		else:
 			d['params'] = {'artist': [artist]}
+			print ("Mopidy: Doing artist only search.")
 
 		searchResponse =  requests.post(self.url, data=json.dumps(d)).json()
 
@@ -79,6 +78,7 @@ class Mopidy(object):
 			return resultTest.split("; ")
 		except:
 			print ("Mopidy: No genres found for this artist.")
+			return None
 
 	## Get list of tracks from a specific playlist
 	def playlist_search(self, filter=None):
