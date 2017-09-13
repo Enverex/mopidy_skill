@@ -29,7 +29,7 @@ All music is looked up "on the fly" so even music you've just added to your coll
 
 ## Usage
 
-- Your intent request performs a search within Mopidy, this can be a track, album, artist, etc. Some Examples:
+Your intent request performs a search within Mopidy, this can be a track, album, artist, etc. Some Examples:
 
 *Tracks:*
 - play track Walking on Broken Glass by Annie Lennox
