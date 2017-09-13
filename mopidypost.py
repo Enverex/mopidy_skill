@@ -196,8 +196,8 @@ class Mopidy(object):
 			d = copy(_base_dict)
 			d['method'] = 'core.playback.resume'
 			r = requests.post(self.url, data=json.dumps(d))
-	else:
-		self.play()
+		else:
+			self.play()
 
 	def get_items(self, uri):
 		d = copy(_base_dict)
