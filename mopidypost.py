@@ -80,11 +80,11 @@ class Mopidy(object):
 		except:
 			print ("Mopidy: No genres found for this artist.")
 
-		## Get list of tracks from a specific playlist
-		def playlist_search(self, filter=None):
-			d = copy(_base_dict)
-			d['method'] = 'core.playlists.as_list'
-			trackArray = requests.post(self.url, data=json.dumps(d)).json()["result"]
+	## Get list of tracks from a specific playlist
+	def playlist_search(self, filter=None):
+		d = copy(_base_dict)
+		d['method'] = 'core.playlists.as_list'
+		trackArray = requests.post(self.url, data=json.dumps(d)).json()["result"]
 		trackList = []
 		for thisTrack in trackArray:
 			trackList.append(thisTrack["tracks"])
