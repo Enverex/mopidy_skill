@@ -4,7 +4,7 @@
 ## Randomise - Randomise the current track listing.
 ## Enqueue - Ability to add to the current playlist queue rather than always starting a new one.
 ## Conversation - Multi-part ability to ask for info on something, e.g. albums by artist and then
-##		respond which you want
+##		respond which you would like played.
 
 import sys
 import time
@@ -195,7 +195,7 @@ class MopidyLocalSkill(MycroftSkill):
 
 			## Look for specific song, not just artist
 			if likeSong:
-				logger.info('Mopidy: Trying to find music like ' + likeSong + ' by ' + likeArtist)
+				logger.info('Mopidy: Trying to find music like ' + likeSong + ' by artist' + likeArtist)
 				artistGenres = self.mopidy.get_artist_genres(likeArtist, likeSong)
 			else:
 				logger.info('Mopidy: Trying to find music like artist ' + likeArtist)
