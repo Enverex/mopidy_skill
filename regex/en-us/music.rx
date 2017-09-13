@@ -8,3 +8,4 @@ play (?:some )?(?:tracks|music) from the year (?P<Year>(?:16|17|18|19|20)\d{4})
 play (?:the )?genre (?P<Genre>.*)
 play (?:(?:me|us) )?some (?P<Genre>.*) music
 play (?:tracks|music) (with band member|with performer|performed by) (?P<Performer>.*)
+play (?:music|tracks) (?:like|similar to) (?P<LikeArtist>.*)

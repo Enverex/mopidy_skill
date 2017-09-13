@@ -77,6 +77,9 @@ class MopidyLocalSkill(MycroftSkill):
 		playPerformerIntent = IntentBuilder('PlayPerformerIntent').require('Performer').build()
 		self.register_intent(playPerformerIntent, self.handle_play_playlist)
 
+		playLikeIntent = IntentBuilder('PlayLikeIntent').require('LikeArtist').build()
+		self.register_intent(playLikeIntent, self.handle_play_playlist)
+
 		## Listen for event requests from Mycroft core
 		self.add_event('mycroft.audio.service.pause', self.handle_pause)
 		self.add_event('mycroft.audio.service.stop', self.handle_stop)
@@ -129,6 +132,7 @@ class MopidyLocalSkill(MycroftSkill):
 		decade = message.data.get('Decade')
 		decadeWord = message.data.get('DecadeWord')
 		performer = message.data.get('Performer')
+		like = message.data.get('LikeArtist')
 
 		## Translate a decade word into something usable by the normal decade block
 		if decadeWord:
@@ -170,6 +174,21 @@ class MopidyLocalSkill(MycroftSkill):
 			randomMode = True
 			logger.info('Mopidy: Trying to play artist ' + artist)
 			trackList = self.mopidy.library_search('artist', artist)
+
+		elif like:
+			randomMode = True
+			logger.info('Mopidy: Trying to find music like artist ' + like)
+
+			artistGenres = self.mopidy.get_artist_genres(like)
+			trackList = self.mopidy.get_similar_tracks(artistGenres, like)
+			## No matches, remove the lest significant genre and try again
+			if not trackList:
+				artistGenres = artistGenres[:-1]
+				trackList = self.mopidy.get_similar_tracks(artistGenres, like)
+				if not trackList:
+					## No matches, remove the lest significant genre and try again
+					artistGenres = artistGenres[:-1]
+					trackList = self.mopidy.get_similar_tracks(artistGenres, like)
 
 		## Play a genre
 		elif genre:

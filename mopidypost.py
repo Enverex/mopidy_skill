@@ -30,14 +30,51 @@ class Mopidy(object):
 	searchResponse =  requests.post(self.url, data=json.dumps(d)).json()
 
 	try:
+		print (searchResponse["result"][0]["tracks"][0]["genre"])
 		resultTest = searchResponse["result"][0]["tracks"]
 	except:
+		self.speak("No suitable music found")
 		print ("Mopidy: No tracks found.")
 		return
 
 	trackList = []
 	for thisTrack in searchResponse["result"]: trackList.append(thisTrack["tracks"])
         return trackList
+
+
+    def get_similar_tracks(self, genreList, excludeArtist):
+        d = copy(_base_dict)
+        d['method'] = 'core.library.search'
+	d['params'] = {'genre': genreList}
+
+	searchResponse =  requests.post(self.url, data=json.dumps(d)).json()
+
+	try:
+		resultTest = searchResponse["result"][0]["tracks"]
+	except:
+		print ("Mopidy: No similar tracks found.")
+		return
+
+	trackList = []
+	for thisTrack in searchResponse["result"][0]["tracks"]:
+		print (thisTrack["artists"][0]["name"] + ' comparing to ' + excludeArtist)
+		if thisTrack["artists"][0]["name"] != excludeArtist: trackList.append(thisTrack)
+
+        return trackList
+
+
+    def get_artist_genres(self, artist):
+        d = copy(_base_dict)
+        d['method'] = 'core.library.search'
+        d['params'] = {'artist': [artist]}
+
+	searchResponse =  requests.post(self.url, data=json.dumps(d)).json()
+
+	try:
+		resultTest = searchResponse["result"][0]["tracks"][0]["genre"]
+		return resultTest.split("; ")
+	except:
+		print ("Mopidy: No genres found for this artist.")
 
 
     def playlist_search(self, filter=None):
