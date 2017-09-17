@@ -9,6 +9,7 @@ This skill require Mopidy and some related packages to function:
 
 - mopidy
 - mopidy-local-mysql
+- nested-lookup
 
 Most of these requirements can be installed through the standard method for the OS (e.g. apt, pacman, yum, etc). I recommend using the official [mopidy install guide](https://docs.mopidy.com/en/latest/installation/) to get the software for your specific system.
 
