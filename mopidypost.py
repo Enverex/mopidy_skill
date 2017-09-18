@@ -8,12 +8,11 @@ _base_dict = {'jsonrpc': '2.0', 'id': 1, 'params': {}}
 
 class Mopidy(object):
 	def __init__(self, url):
-		print "MOPIDY URL: " + url
 		self.is_playing = False
 		self.url = url + MOPIDY_API
 		self.volume = None
 		self.clear_list(force=True)
-		self.volume_low = 5
+		self.volume_low = 10
 		self.volume_high = 100
 
 
@@ -23,14 +22,13 @@ class Mopidy(object):
 		d['method'] = 'core.library.search'
 
 		if field2 is not None:
-			d['params'] = {field: [search], field2: [search2]}
+			d['params'] = {field: [search], field2: [search2], 'uri': ['local:']}
 		else:
-			d['params'] = {field: [search]}
+			d['params'] = {field: [search], 'uri': ['local:']}
 
 		searchResponse =  requests.post(self.url, data=json.dumps(d)).json()
 
 		try:
-			print (searchResponse["result"][0]["tracks"][0]["genre"])
 			resultTest = searchResponse["result"][0]["tracks"]
 		except:
 			return None
@@ -43,7 +41,7 @@ class Mopidy(object):
 	def get_similar_tracks(self, genreList, excludeArtist):
 		d = copy(_base_dict)
 		d['method'] = 'core.library.search'
-		d['params'] = {'genre': genreList}
+		d['params'] = {'genre': genreList, 'uri': ['local:']}
 
 		searchResponse =  requests.post(self.url, data=json.dumps(d)).json()
 
@@ -55,7 +53,6 @@ class Mopidy(object):
 
 		trackList = []
 		for thisTrack in searchResponse["result"][0]["tracks"]:
-			print (thisTrack["artists"][0]["name"] + ' comparing to ' + excludeArtist)
 			if thisTrack["artists"][0]["name"] != excludeArtist: trackList.append(thisTrack)
 
 		return trackList
@@ -65,7 +62,7 @@ class Mopidy(object):
 		d = copy(_base_dict)
 		d['method'] = 'core.library.search'
 		if track is not None:
-			d['params'] = {'artist': [artist], 'track_name': [track]}
+			d['params'] = {'artist': [artist], 'track_name': [track], 'uri': ['local:']}
 			print ("Mopidy: Doing artist and track search.")
 		else:
 			d['params'] = {'artist': [artist]}
