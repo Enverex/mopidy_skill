@@ -1,7 +1,6 @@
 import requests
 import json
 from copy import copy
-from nested_lookup import nested_lookup
 
 MOPIDY_API = '/mopidy/rpc'
 _base_dict = {'jsonrpc': '2.0', 'id': 1, 'params': {}}
