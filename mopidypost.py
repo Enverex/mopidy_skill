@@ -1,6 +1,7 @@
 import requests
 import json
 from copy import copy
+from nested_lookup import nested_lookup
 
 MOPIDY_API = '/mopidy/rpc'
 _base_dict = {'jsonrpc': '2.0', 'id': 1, 'params': {}}
@@ -15,7 +16,6 @@ class Mopidy(object):
 		self.volume_low = 10
 		self.volume_high = 100
 
-
 	## Take up to 2 fields and values, then return a list of tracks matching those values
 	def library_search(self, field, search, field2=None, search2=None):
 		d = copy(_base_dict)
@@ -29,13 +29,9 @@ class Mopidy(object):
 		searchResponse =  requests.post(self.url, data=json.dumps(d)).json()
 
 		try:
-			resultTest = searchResponse["result"][0]["tracks"]
+			return searchResponse["result"][0]["tracks"]
 		except:
 			return None
-
-		trackList = []
-		for thisTrack in searchResponse["result"]: trackList.append(thisTrack["tracks"])
-		return trackList
 
 	## Take a list of genres and an artist name, return a list of tracks excluding ones by that artist
 	def get_similar_tracks(self, genreList, excludeArtist):
@@ -46,13 +42,13 @@ class Mopidy(object):
 		searchResponse =  requests.post(self.url, data=json.dumps(d)).json()
 
 		try:
-			resultTest = searchResponse["result"][0]["tracks"]
+			searchResponse = searchResponse["result"][0]["tracks"]
 		except:
 			print ("Mopidy: No similar tracks found.")
-			return
+			return None
 
 		trackList = []
-		for thisTrack in searchResponse["result"][0]["tracks"]:
+		for thisTrack in searchResponse:
 			if thisTrack["artists"][0]["name"] != excludeArtist: trackList.append(thisTrack)
 
 		return trackList
@@ -65,14 +61,14 @@ class Mopidy(object):
 			d['params'] = {'artist': [artist], 'track_name': [track], 'uri': ['local:']}
 			print ("Mopidy: Doing artist and track search.")
 		else:
-			d['params'] = {'artist': [artist]}
+			d['params'] = {'artist': [artist], 'uri': ['local:']}
 			print ("Mopidy: Doing artist only search.")
 
-		searchResponse =  requests.post(self.url, data=json.dumps(d)).json()
+		searchResponse = requests.post(self.url, data=json.dumps(d)).json()
 
 		try:
-			resultTest = searchResponse["result"][0]["tracks"][0]["genre"]
-			return resultTest.split("; ")
+			searchResponse = searchResponse["result"][0]["tracks"][0]["genre"]
+			return searchResponse.split("; ")
 		except:
 			print ("Mopidy: No genres found for this artist.")
 			return None
