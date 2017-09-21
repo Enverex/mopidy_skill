@@ -167,17 +167,38 @@ class MopidyLocalSkill(MycroftSkill):
 					logger.info('Mopidy: Trying to play the track ' + track)
 					trackList = self.mopidy.library_search('track_name', track)
 
+			## Try again with added apostrophes
+			if not trackList:
+				logger.info("Mopidy: No search matches, trying again with added apostrophes.")
+				artist = self.add_apos(artist)
+				track = self.add_apos(track)
+
+				if artist is not None:
+					logger.info('Mopidy: Trying to play the track ' + track + ' by the artist ' + artist)
+					trackList = self.mopidy.library_search('track_name', track, 'artist', artist)
+				else:
+					logger.info('Mopidy: Trying to play the track ' + track)
+					trackList = self.mopidy.library_search('track_name', track)
+
 
 		## Play album by a specific artist
 		elif artist and album:
 			logger.info('Mopidy: Trying to play album ' + album + ' by ' + artist)
 			trackList = self.mopidy.library_search('album', album, 'artist', artist)
+			if not trackList:
+				artist = self.add_apos(artist)
+				album = self.add_apos(album)
+				trackList = self.mopidy.library_search('album', album, 'artist', artist)
+
 
 		## Play everything by a specific artist
 		elif artist:
 			randomMode = True
 			logger.info('Mopidy: Trying to play artist ' + artist)
 			trackList = self.mopidy.library_search('artist', artist)
+			if not trackList:
+				artist = self.add_apos(artist)
+				trackList = self.mopidy.library_search('artist', artist)
 
 		## Try and find music like the requested artist (optionally a specific song) by matching their genres
 		elif likeArtist:
@@ -187,9 +208,16 @@ class MopidyLocalSkill(MycroftSkill):
 			if likeSong:
 				logger.info('Mopidy: Trying to find music like ' + likeSong + ' by artist' + likeArtist)
 				artistGenres = self.mopidy.get_artist_genres(likeArtist, likeSong)
+				if not artistGenres:
+					likeArtist = self.add_apos(likeArtist)
+					likeSong = self.add_apos(likeSong)
+					artistGenres = self.mopidy.get_artist_genres(likeArtist, likeSong)
 			else:
 				logger.info('Mopidy: Trying to find music like artist ' + likeArtist)
 				artistGenres = self.mopidy.get_artist_genres(likeArtist)
+				if not artistGenres:
+					likeArtist = self.add_apos(likeArtist)
+					artistGenres = self.mopidy.get_artist_genres(likeArtist)
 
 			## Genres found
 			if artistGenres is not None:
@@ -301,6 +329,10 @@ class MopidyLocalSkill(MycroftSkill):
 		self.speak("Nothing is currently playing")
 		time.sleep(3)
 		self.mopidy.restore_volume()
+
+	def add_apos(self, name):
+		return re.sub('s(?=$| )', "'s", name).strip()
+
 
 
 def create_skill():

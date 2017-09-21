@@ -148,7 +148,6 @@ class Mopidy(object):
 			r = requests.post(self.url, data=json.dumps(d))
 
 	def stop(self):
-		print self.is_playing
 		if self.is_playing:
 			d = copy(_base_dict)
 			d['method'] = 'core.playback.stop'
@@ -197,7 +196,6 @@ class Mopidy(object):
 		d['params'] = {'uri': uri}
 		r = requests.post(self.url, data=json.dumps(d))
 		if 'result' in r.json():
-			print r.json()
 			return [e['uri'] for e in r.json()['result']]
 		else:
 			return None
@@ -228,7 +226,5 @@ class Mopidy(object):
 		return {e['name']: e for e in p if e['type'] == 'directory'}
 
 	def get_local_playlists(self):
-		print "GETTING PLAYLISTS"
 		p = self.get_playlists('m3u')
-		print "RETURNING PLAYLISTS"
 		return {e['name']: e for e in p}
