@@ -7,6 +7,7 @@ play album {album} by {artist}
 play album {album}
 play music from album {album}
 play artist {artist}
+play some music by {artist}
 play music by {artist}
 play something by {artist}
 play songs from {year}
@@ -17,6 +18,7 @@ play music from decade {decade}
 play some {genre} music
 play us some {genre}
 play tracks performed by {performer}
+play music by the performer {performer}
 play music with band member {performer}
 play music similar to {likesong} by {likeartist}
 play tracks similar to {likesong} by {likeartist}

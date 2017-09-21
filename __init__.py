@@ -65,6 +65,7 @@ class MopidyLocalSkill(MycroftSkill):
 
 		## Set up intents
 		self.register_intent_file('play.music.intent', self.handle_play_music)
+		self.register_intent_file('whats.playing.intent', self.handle_currently_playing)
 
 		## Listen for event requests from Mycroft core
 		self.add_event('mycroft.audio.service.pause', self.handle_pause)
@@ -186,6 +187,8 @@ class MopidyLocalSkill(MycroftSkill):
 		## Play a genre
 		elif genre:
 			randomMode = True
+			## Remove accidental additions
+			genre = genre.replace('music', '').strip()
 			logger.info('Mopidy: Trying to play genre ' + genre)
 			trackList = self.mopidy.library_search('genre', genre)
 
