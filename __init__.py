@@ -11,6 +11,7 @@ import time
 import requests
 import json
 import random
+import re
 
 from os.path import dirname, abspath, basename
 from nested_lookup import nested_lookup
@@ -18,7 +19,6 @@ from mycroft.skills.core import MycroftSkill, intent_file_handler
 from mycroft.configuration import ConfigurationManager
 from mycroft.messagebus.message import Message
 from mycroft.util.log import getLogger
-from adapt.intent import IntentBuilder
 
 sys.path.append(abspath(dirname(__file__)))
 Mopidy = __import__('mopidypost').Mopidy
@@ -110,16 +110,24 @@ class MopidyLocalSkill(MycroftSkill):
 		album = message.data.get('album')
 		track = message.data.get('track')
 		genre = message.data.get('genre')
-		year = message.data.get('year').replace(' ', '')
+		year = message.data.get('year')
+		decade = None
 		decadeWord = message.data.get('decadeword')
 		performer = message.data.get('performer')
 		likeSong = message.data.get('likesong')
 		likeArtist = message.data.get('likeartist')
 
-		## Is the year actually a decade request?
-		if year[-1] == 's':
-			decade = year[:-1]
-			year = None
+		## Clean up the year as pedacious adds spaces for some reason
+		if year is not None:
+			year = year.replace(' ', '')
+			## Is the year actually a decade request?
+			if year[-1] == 's':
+				decade = year[:-1]
+				year = None
+
+		## Remove the word "music" from genre if it was passed
+		if genre is not None:
+			genre = genre.replace('music', '').strip()
 
 		## Translate a decade word into something usable by the normal decade block
 		if decadeWord:
@@ -138,18 +146,27 @@ class MopidyLocalSkill(MycroftSkill):
 			decade = str(decade)
 
 		## Play Track by specific artist
-		if artist and track:
-			logger.info('Mopidy: Trying to play the track ' + track + ' by the artist ' + artist)
-			## Get track list
-			trackList = self.mopidy.library_search('track_name', track, 'artist', artist)
+		if track:
+			## Also search for the artist if specified
+			if artist is not None:
+				logger.info('Mopidy: Trying to play the track ' + track + ' by the artist ' + artist)
+				trackList = self.mopidy.library_search('track_name', track, 'artist', artist)
+			else:
+				logger.info('Mopidy: Trying to play the track ' + track)
+				trackList = self.mopidy.library_search('track_name', track)
+
 			## Try again with known grammar replacements
 			if not trackList:
 				logger.info("Mopidy: No search matches, trying again with common word variations.")
-				track.replace("we have", "we've")
-				track.replace("we are", "we're")
-				track.replace("they have", "they've")
-				track.replace("they are", "they're")
-				trackList = self.mopidy.library_search('track_name', track, 'artist', artist)
+				track = track.replace("we have", "we've").replace("we are", "we're").replace("they have", "they've").replace("they are", "they're")
+
+				if artist is not None:
+					logger.info('Mopidy: Trying to play the track ' + track + ' by the artist ' + artist)
+					trackList = self.mopidy.library_search('track_name', track, 'artist', artist)
+				else:
+					logger.info('Mopidy: Trying to play the track ' + track)
+					trackList = self.mopidy.library_search('track_name', track)
+
 
 		## Play album by a specific artist
 		elif artist and album:
@@ -206,7 +223,7 @@ class MopidyLocalSkill(MycroftSkill):
 		elif decade:
 			randomMode = True
 			## Remove the trailing zero (19x[x] of match group)
-			if len(decade) > 2: decade = decade[:-1]
+			if len(decade) == 4: decade = decade[:-1]
 			## Assume 19XX if only centuries provided (19[x]x of match group)
 			if len(decade) == 2: decade = '19' + decade;
 			logger.info('Mopidy: Trying to play music from the decade ' + decade + '0s')

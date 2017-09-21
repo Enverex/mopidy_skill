@@ -13,12 +13,12 @@ play songs from {year}
 play music from {year}
 play some music from {year}
 play music from {year}
-play music from decade {decade}
 play some {genre} music
-play us some {genre}
+play track performed by {performer}
 play tracks performed by {performer}
 play music with band member {performer}
 play music similar to {likesong} by {likeartist}
+play track similar to {likesong} by {likeartist}
 play tracks similar to {likesong} by {likeartist}
 play music like band {likeartist}
 play music like group {likeartist}
