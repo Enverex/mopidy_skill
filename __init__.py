@@ -65,6 +65,8 @@ class MopidyLocalSkill(MycroftSkill):
 
 		## Set up intents
 		self.register_intent_file('play.music.intent', self.handle_play_music)
+		self.register_intent_file('whats.playing.intent', self.handle_currently_playing)
+		self.register_intent_file('control.playback.intent', self.handle_playlist_control)
 
 		## Listen for event requests from Mycroft core
 		self.add_event('mycroft.audio.service.pause', self.handle_pause)
@@ -108,12 +110,16 @@ class MopidyLocalSkill(MycroftSkill):
 		album = message.data.get('album')
 		track = message.data.get('track')
 		genre = message.data.get('genre')
-		year = message.data.get('year')
-		decade = message.data.get('decade')
+		year = message.data.get('year').replace(' ', '')
 		decadeWord = message.data.get('decadeword')
 		performer = message.data.get('performer')
 		likeSong = message.data.get('likesong')
 		likeArtist = message.data.get('likeartist')
+
+		## Is the year actually a decade request?
+		if year[-1] == 's':
+			decade = year[:-1]
+			year = None
 
 		## Translate a decade word into something usable by the normal decade block
 		if decadeWord:
@@ -133,13 +139,14 @@ class MopidyLocalSkill(MycroftSkill):
 
 		## Play Track by specific artist
 		if artist and track:
-			logger.info('Mopidy: Trying to play track ' + track + ' by ' + artist)
+			logger.info('Mopidy: Trying to play the track ' + track + ' by the artist ' + artist)
 			## Get track list
 			trackList = self.mopidy.library_search('track_name', track, 'artist', artist)
 			## Try again with known grammar replacements
 			if not trackList:
 				logger.info("Mopidy: No search matches, trying again with common word variations.")
 				track.replace("we have", "we've")
+				track.replace("we are", "we're")
 				track.replace("they have", "they've")
 				track.replace("they are", "they're")
 				trackList = self.mopidy.library_search('track_name', track, 'artist', artist)
@@ -186,29 +193,29 @@ class MopidyLocalSkill(MycroftSkill):
 		## Play a genre
 		elif genre:
 			randomMode = True
-			logger.info('Mopidy: Trying to play genre ' + genre)
+			logger.info('Mopidy: Trying to play music from the genre ' + genre)
 			trackList = self.mopidy.library_search('genre', genre)
 
 		## Play everything from a specific year
 		elif year:
 			randomMode = True
-			logger.info('Mopidy: Trying to play year ' + year)
+			logger.info('Mopidy: Trying to play music from the year ' + year)
 			trackList = self.mopidy.library_search('date', year)
 
 		## Play random songs from a specific decade
 		elif decade:
 			randomMode = True
-			## Remove the trailing 's' and zero (19x[xs] of match group)
-			if len(decade) > 1: decade = decade[:-2]
-			## Assume 19XX if only centuries provided (19[x]xs of match group)
-			if len(decade) == 1: decade = '19' + decade;
-			logger.info('Mopidy: Trying to play music from the ' + decade + '0s')
+			## Remove the trailing zero (19x[x] of match group)
+			if len(decade) > 2: decade = decade[:-1]
+			## Assume 19XX if only centuries provided (19[x]x of match group)
+			if len(decade) == 2: decade = '19' + decade;
+			logger.info('Mopidy: Trying to play music from the decade ' + decade + '0s')
 			trackList = self.mopidy.library_search('date', decade + '*')
 
 		## Play tracks with a specific performer / member
 		elif performer:
 			randomMode = True
-			logger.info('Mopidy: Trying to music tracks with performer ' + performer)
+			logger.info('Mopidy: Trying to music that has the performer ' + performer)
 			trackList = self.mopidy.library_search('performer', '*' + performer + '*')
 
 		if trackList is not None:

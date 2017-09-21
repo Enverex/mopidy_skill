@@ -1,2 +1,0 @@
-(?P<Action>unpause|resume|continue|pause|stop) (?:music|playback|playing)
-play (?P<Action>next|previous) (?:song|track)
