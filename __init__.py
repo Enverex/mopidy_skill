@@ -14,7 +14,7 @@ import random
 
 from os.path import dirname, abspath, basename
 from nested_lookup import nested_lookup
-from mycroft.skills.core import MycroftSkill
+from mycroft.skills.core import MycroftSkill, intent_file_handler
 from mycroft.configuration import ConfigurationManager
 from mycroft.messagebus.message import Message
 from mycroft.util.log import getLogger
@@ -64,41 +64,7 @@ class MopidyLocalSkill(MycroftSkill):
 		self.emitter.emit(Message(self.name + '.connect'))
 
 		## Set up intents
-		playControllerIntent = IntentBuilder('playControllerIntent').require('Action').build()
-		self.register_intent(playControllerIntent, self.handle_playlist_control)
-
-		currentlyPlayingIntent = IntentBuilder('currentlyPlayingIntent').require('CurrentlyPlayingKeyword')
-		self.register_intent(currentlyPlayingIntent, self.handle_currently_playing)
-
-		playTrackIntent = IntentBuilder('playTrackIntent').require('Track').require('Artist').build()
-		self.register_intent(playTrackIntent, self.handle_play_playlist)
-
-		playAlbumIntent = IntentBuilder('playAlbumIntent').require('Album').require('Artist').build()
-		self.register_intent(playAlbumIntent, self.handle_play_playlist)
-
-		playArtistIntent = IntentBuilder('playArtistIntent').require('Artist').build()
-		self.register_intent(playArtistIntent, self.handle_play_playlist)
-
-		playGenreIntent = IntentBuilder('playGenreIntent').require('Genre').build()
-		self.register_intent(playGenreIntent, self.handle_play_playlist)
-
-		playYearIntent = IntentBuilder('playYearIntent').require('Year').build()
-		self.register_intent(playYearIntent, self.handle_play_playlist)
-
-		playDecadeIntent = IntentBuilder('playDecadeIntent').require('Decade').build()
-		self.register_intent(playDecadeIntent, self.handle_play_playlist)
-
-		playDecadeWordIntent = IntentBuilder('playDecadeWordIntent').require('DecadeWord').build()
-		self.register_intent(playDecadeWordIntent, self.handle_play_playlist)
-
-		playPerformerIntent = IntentBuilder('playPerformerIntent').require('Performer').build()
-		self.register_intent(playPerformerIntent, self.handle_play_playlist)
-
-		playLikeTrackIntent = IntentBuilder('playLikeTrackIntent').require('LikeSong').require('LikeArtist').build()
-		self.register_intent(playLikeTrackIntent, self.handle_play_playlist)
-
-		playLikeIntent = IntentBuilder('PlayLikeIntent').require('LikeArtist').build()
-		self.register_intent(playLikeIntent, self.handle_play_playlist)
+		self.register_intent_file('play.music.intent', self.handle_play_music)
 
 		## Listen for event requests from Mycroft core
 		self.add_event('mycroft.audio.service.pause', self.handle_pause)
@@ -120,7 +86,7 @@ class MopidyLocalSkill(MycroftSkill):
 
 	## Basic media controls
 	def handle_playlist_control(self, message):
-		performAction = message.data.get('Action')
+		performAction = message.data.get('action')
 		if performAction == 'next':
 			self.handle_next()
 		elif performAction == 'previous':
@@ -134,20 +100,20 @@ class MopidyLocalSkill(MycroftSkill):
 
 
 	## Playlist additions
-	def handle_play_playlist(self, message):
+	def handle_play_music(self, message):
 		keepUrls = ['local:track:']
 		trackList = None
 		randomMode = False
-		artist = message.data.get('Artist')
-		album = message.data.get('Album')
-		track = message.data.get('Track')
-		genre = message.data.get('Genre')
-		year = message.data.get('Year')
-		decade = message.data.get('Decade')
-		decadeWord = message.data.get('DecadeWord')
-		performer = message.data.get('Performer')
-		likeSong = message.data.get('LikeSong')
-		likeArtist = message.data.get('LikeArtist')
+		artist = message.data.get('artist')
+		album = message.data.get('album')
+		track = message.data.get('track')
+		genre = message.data.get('genre')
+		year = message.data.get('year')
+		decade = message.data.get('decade')
+		decadeWord = message.data.get('decadeword')
+		performer = message.data.get('performer')
+		likeSong = message.data.get('likesong')
+		likeArtist = message.data.get('likeartist')
 
 		## Translate a decade word into something usable by the normal decade block
 		if decadeWord:
