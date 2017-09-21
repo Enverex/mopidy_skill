@@ -48,7 +48,7 @@ Your intent request performs a search within Mopidy, this can be a track, album,
 - play music from 1985
 - play some music from 1999
 - play music from the 1970s
-- play tracks from the sixties
+- play tracks from the 60s
 
 *Genres:*
 - play some Rock music
@@ -63,19 +63,3 @@ Your intent request performs a search within Mopidy, this can be a track, album,
 - play music like the band Alphabeat
 
 Audio controls are also implemented, so you can use the common phrases *next track*, *previous track*, *pause*, *resume*, *stop*, etc to control the music.
-
-If you're in to details, here are the raw examples of what the skill will respond to:
-```
-play (track|song) (?P<Track>.*) by (?P<Artist>.*)
-play album (?P<Album>.*) by (?P<Artist>.*)
-play (?:group|band|artist|composer) (?P<Artist>.*)
-play (?:music|something) by (?P<Artist>.*)
-play (?:some )?(?:tracks|music|pieces) from (?P<Decade>(?:16|17|18|19|20)?\d{1}0s)
-play (?:some )?(?:tracks|music) from (?P<DecadeWord>thirties|fourties|fifties|sixties|seventies|eighties|nineties|naughties|tens)
-play (?:some )?(?:tracks|music) from (?P<Year>(?:16|17|18|19|20)\d{2})
-play (?:tracks|music) (?:with band member|with performer|performed by) (?P<Performer>.*)
-play (?:music|tracks|something) (?:like|similar to) (?:track|song) (?P<LikeSong>.*) by (?P<LikeArtist>.*)
-play (?:music|tracks|something) (?:like|similar to) (?:group|band|artist|composer) (?P<LikeArtist>.*)
-play (?:(?:me|us) )?some (?P<Genre>.*) music
-play genre (?P<Genre>.*)
-```
