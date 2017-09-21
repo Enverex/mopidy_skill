@@ -207,6 +207,7 @@ class MopidyLocalSkill(MycroftSkill):
 			## Look for specific song, not just artist
 			if likeSong:
 				logger.info('Mopidy: Trying to find music like ' + likeSong + ' by artist' + likeArtist)
+				## Create a large unique list from multiple songs
 				artistGenres = self.mopidy.get_artist_genres(likeArtist, likeSong)
 				if not artistGenres:
 					likeArtist = self.add_apos(likeArtist)
@@ -214,22 +215,18 @@ class MopidyLocalSkill(MycroftSkill):
 					artistGenres = self.mopidy.get_artist_genres(likeArtist, likeSong)
 			else:
 				logger.info('Mopidy: Trying to find music like artist ' + likeArtist)
+				## Create a large unique list from multiple songs
 				artistGenres = self.mopidy.get_artist_genres(likeArtist)
 				if not artistGenres:
 					likeArtist = self.add_apos(likeArtist)
 					artistGenres = self.mopidy.get_artist_genres(likeArtist)
 
-			## Genres found
-			if artistGenres is not None:
-				trackList = self.mopidy.get_similar_tracks(artistGenres, likeArtist)
-				## No matches, remove the lest significant genre and try again
-				if not trackList and len(artistGenres) > 1:
-					artistGenres = artistGenres[:-1]
+			## Genres found, now look for tracks
+			if artistGenres:
+				## Loop, removing the least significant genre each time we fail to find results
+				while not trackList and len(artistGenres) >= 1:
 					trackList = self.mopidy.get_similar_tracks(artistGenres, likeArtist)
-					if not trackList and len(artistGenres) > 1:
-						## No matches, remove the lest significant genre and try again
-						artistGenres = artistGenres[:-1]
-						trackList = self.mopidy.get_similar_tracks(artistGenres, likeArtist)
+					artistGenres = artistGenres[:-1]
 				if not trackList:
 					logger.info('Mopidy: Unable to find any music like ' + likeArtist)
 			else:

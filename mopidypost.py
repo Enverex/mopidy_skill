@@ -1,6 +1,8 @@
 import requests
 import json
+import random
 from copy import copy
+from heapq import merge
 
 MOPIDY_API = '/mopidy/rpc'
 _base_dict = {'jsonrpc': '2.0', 'id': 1, 'params': {}}
@@ -43,14 +45,16 @@ class Mopidy(object):
 		try:
 			searchResponse = searchResponse["result"][0]["tracks"]
 		except:
-			print ("Mopidy: No similar tracks found.")
 			return None
 
 		trackList = []
 		for thisTrack in searchResponse:
-			if thisTrack["artists"][0]["name"] != excludeArtist: trackList.append(thisTrack)
+			if thisTrack["artists"][0]["name"].lower() != excludeArtist.lower(): trackList.append(thisTrack)
 
-		return trackList
+		if trackList:
+			return trackList
+		else:
+			return None
 
 	## Take an artist name (optionally a track name too) and return a list of genres
 	def get_artist_genres(self, artist, track=None):
@@ -58,19 +62,29 @@ class Mopidy(object):
 		d['method'] = 'core.library.search'
 		if track is not None:
 			d['params'] = {'artist': [artist], 'track_name': [track], 'uri': ['local:']}
-			print ("Mopidy: Doing artist and track search.")
 		else:
 			d['params'] = {'artist': [artist], 'uri': ['local:']}
-			print ("Mopidy: Doing artist only search.")
 
 		searchResponse = requests.post(self.url, data=json.dumps(d)).json()
 
 		try:
-			searchResponse = searchResponse["result"][0]["tracks"][0]["genre"]
-			return searchResponse.split("; ")
+			searchResponse = searchResponse["result"][0]["tracks"]
 		except:
-			print ("Mopidy: No genres found for this artist.")
 			return None
+
+		## Randomise the results, take the first 10 and get their genres
+		genreList = []
+		random.shuffle(searchResponse)
+		searchResponse = searchResponse[:10]
+		for thisTrack in searchResponse:
+			if thisTrack["genre"] is not None:
+				#genreList.extend(map(unicode.strip, thisTrack["genre"].split(";")))
+				genreList = list(merge(map(unicode.strip, thisTrack["genre"].split(";")), genreList))
+
+		## Return unique set
+		genreList = list(set(genreList))
+		return genreList
+
 
 	## Get list of tracks from a specific playlist
 	def playlist_search(self, filter=None):
